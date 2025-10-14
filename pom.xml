@@ -60,6 +60,14 @@
             <artifactId>jedis</artifactId>
             <version>6.1.0</version>
         </dependency>
+        <!-- custom dependencies --> 
+        <dependency>
+            <groupId>com.azure</groupId>
+            <artifactId>azure-cosmos</artifactId>
+            <version>4.44.0</version> <!-- choose latest stable -->
+        </dependency>
+
+        <!-- end custom dependencies --> 
     </dependencies>  
     <build> 
         <sourceDirectory>src</sourceDirectory>  
@@ -85,7 +93,7 @@
                 <version>2.14.1</version>
                 <configuration>
                     <pricingTier>F1</pricingTier>
-                    <region>fracecentral</region>
+                    <region>francecentral</region>
                     <runtime>
                         <os>linux</os>
                         <javaVersion>Java 21</javaVersion>
@@ -101,8 +109,11 @@
                             </resource>
                         </resources>
                     </deployment>
+                    <!-- custom configurations --> 
+                    <subscriptionId>3faddd98-aa56-49f0-bbaf-c229f2a221dc</subscriptionId>
                     <resourceGroup>Project</resourceGroup>
                     <appName>Project-Lego</appName>
+                    <!-- end custom configurations --> 
                 </configuration>
             </plugin> 
         </plugins> 
