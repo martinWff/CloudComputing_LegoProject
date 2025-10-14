@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">  
     <modelVersion>4.0.0</modelVersion>  
     <groupId>pt.unl.fct.di.cc</groupId>  
-    <artifactId>cc2526-lab1</artifactId>  
+    <artifactId>project-Legos</artifactId>  
     <version>1.0</version>  
     <packaging>war</packaging>  
     <properties> 
@@ -66,7 +66,12 @@
             <artifactId>azure-cosmos</artifactId>
             <version>4.44.0</version> <!-- choose latest stable -->
         </dependency>
-
+        
+        <dependency>
+            <groupId>jakarta.json.bind</groupId>
+            <artifactId>jakarta.json.bind-api</artifactId>
+            <version>3.0.1</version>
+        </dependency>
         <!-- end custom dependencies --> 
     </dependencies>  
     <build> 
@@ -116,6 +121,13 @@
                     <!-- end custom configurations --> 
                 </configuration>
             </plugin> 
+            <!-- custom plugins --> 
+            <plugin>
+                <groupId>fish.payara.maven.plugins</groupId>
+                <artifactId>payara-micro-maven-plugin</artifactId>
+                <version>1.0.5</version>
+            </plugin>
+            <!-- end custom plugins --> 
         </plugins> 
     </build> 
 </project>
