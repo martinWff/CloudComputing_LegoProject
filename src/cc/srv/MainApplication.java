@@ -15,7 +15,7 @@ public class MainApplication extends Application {
         resources.add(ControlResource.class);
         resources.add(UserResource.class);
         resources.add(LegoSetResource.class);
-        resources.add(CosmosConnectionTest.class);
+        resources.add(CosmosConnection.class);
         singletons.add(new MediaResource());
     }
 
