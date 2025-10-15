@@ -16,9 +16,6 @@ import jakarta.ws.rs.Path;
 public class CosmosConnection{
 
     // Replace with your real values (to do: find way to use the real link without hardcoding it EX: azure app configurator)
-    private static final String ENDPOINT = "https://project-cloud.documents.azure.com:443/";
-    private static final String KEY = "3e7GBYOHduOtURWBC5k3qHSFyZVmfhpThd8Ya9F85JbZH9OYeq6cL8MnHI6KXQtPPetVAOBPjpSiACDbk7HXwQ==";
-    
     
     //store the database thats actually gonna be used from cosmosDB
      private static CosmosDatabase db;
