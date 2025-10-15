@@ -64,13 +64,18 @@
         <dependency>
             <groupId>com.azure</groupId>
             <artifactId>azure-cosmos</artifactId>
-            <version>4.44.0</version> <!-- choose latest stable -->
+            <version>4.55.0</version>
         </dependency>
-        
         <dependency>
             <groupId>jakarta.json.bind</groupId>
             <artifactId>jakarta.json.bind-api</artifactId>
             <version>3.0.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.azure</groupId>
+            <artifactId>azure-core</artifactId>
+            <version>1.52.0</version> 
         </dependency>
         <!-- end custom dependencies --> 
     </dependencies>  

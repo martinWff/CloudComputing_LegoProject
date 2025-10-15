@@ -3,7 +3,6 @@ package cc.srv;
 import java.util.HashSet;
 import java.util.Set;
 
-import jakarta.ws.rs.ApplicationPath;
 import jakarta.ws.rs.core.Application;
 
 public class MainApplication extends Application {
@@ -16,6 +15,7 @@ public class MainApplication extends Application {
         resources.add(ControlResource.class);
         resources.add(UserResource.class);
         resources.add(LegoSetResource.class);
+        resources.add(CosmosConnectionTest.class);
         singletons.add(new MediaResource());
     }
 

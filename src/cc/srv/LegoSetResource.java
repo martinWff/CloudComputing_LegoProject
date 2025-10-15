@@ -30,9 +30,8 @@ public class LegoSetResource {
     @GET
     @Path("/{id}/comment/list")
     @Produces(MediaType.APPLICATION_JSON)
-    public Comment[] listComments(@PathParam("id") int legoSetId, @QueryParam("page") int page, @QueryParam("categoria") String cat) {
+    public Comment[] listComments(@PathParam("id") int legoSetId, @QueryParam("page") int page) {
         System.out.println("page: "+page);
-        System.out.println("categoria: "+cat);
         return new Comment[] {new Comment("Martin","Gostei do lego")};
     }
 
