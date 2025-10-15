@@ -1,9 +1,14 @@
 package cc.srv;
 
-import jakarta.ws.rs.*;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.jboss.resteasy.annotations.Body;
 
 @Path("/legoset")
 public class LegoSetResource {
@@ -25,8 +30,9 @@ public class LegoSetResource {
     @GET
     @Path("/{id}/comment/list")
     @Produces(MediaType.APPLICATION_JSON)
-    public Comment[] listComments(@PathParam("id") int legoSetId, @QueryParam("page") int page) {
+    public Comment[] listComments(@PathParam("id") int legoSetId, @QueryParam("page") int page, @QueryParam("categoria") String cat) {
         System.out.println("page: "+page);
+        System.out.println("categoria: "+cat);
         return new Comment[] {new Comment("Martin","Gostei do lego")};
     }
 
