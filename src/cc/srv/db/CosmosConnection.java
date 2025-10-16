@@ -1,22 +1,24 @@
-package cc.srv;
+package cc.srv.db;
 
 import com.azure.cosmos.ConsistencyLevel;
 import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
 import com.azure.cosmos.CosmosDatabase;
 
-import jakarta.annotation.PostConstruct;
+import cc.utils.EnvLoader;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 
-@Path("/Database")
+//@Path("/db")
 
 @ApplicationScoped //it creates one instance of this class on start up for the whole web app
 public class CosmosConnection{
 
     // Replace with your real values (to do: find way to use the real link without hardcoding it EX: azure app configurator)
-    
+    private static final String ENDPOINT = EnvLoader.GetDBEndpoint();
+    private static final String KEY = EnvLoader.GetDBKeys();
+
     //store the database thats actually gonna be used from cosmosDB
      private static CosmosDatabase db;
 
@@ -35,36 +37,35 @@ public class CosmosConnection{
         return client;
     }
 
-    public static synchronized CosmosDatabase getDatabase(String test) {
+    public static synchronized CosmosDatabase getDatabase() {
         if (db == null) {
-            String dbName = System.getenv("COSMOS_DATABASE");
-            //db = GetDBClient().getDatabase(dbName);
-            db = GetDBClient().getDatabase(test);
+            db = GetDBClient().getDatabase(EnvLoader.GetDBName());
+            
         }
         return db;
     }
 
 
     //initialization function
-    @PostConstruct
-    public void init()
+    //@PostConstruct
+    public static void dbInit()
     {
         System.out.println("starting cosmosDB client connection creation");
 
         client = GetDBClient();
-        db = getDatabase("LegoDB"); //change this later to environment variables
+        db = getDatabase();
 
-        //.out.println(client + "\n" + db + "\n");
+        System.out.println(client + "\n" + db + "\n");
     }
 
 
     @GET
-    @Path("/TestDBConnection")
+    @Path("/testdbconn")
     public void TestConn() {
         CosmosClient tempclient = null;
         try {
             // Build the client
-            client = new CosmosClientBuilder()
+            tempclient = new CosmosClientBuilder()
                     .endpoint(ENDPOINT)
                     .key(KEY)
                     .gatewayMode()
@@ -74,7 +75,7 @@ public class CosmosConnection{
             // Try listing databases to verify access
             System.out.println("✅ Connection successful! Listing databases:");
 
-            client.readAllDatabases().forEach(dbases -> {
+            tempclient.readAllDatabases().forEach(dbases -> {
                 System.out.println(" - " + dbases.getId());
             });
 

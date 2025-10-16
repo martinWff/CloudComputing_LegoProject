@@ -3,6 +3,8 @@ package cc.srv;
 import java.util.HashSet;
 import java.util.Set;
 
+import cc.srv.db.CosmosConnection;
+import cc.utils.EnvLoader;
 import jakarta.ws.rs.core.Application;
 
 public class MainApplication extends Application {
@@ -15,8 +17,12 @@ public class MainApplication extends Application {
         resources.add(ControlResource.class);
         resources.add(UserResource.class);
         resources.add(LegoSetResource.class);
-        resources.add(CosmosConnectionTest.class);
+        resources.add(CosmosConnection.class);
         singletons.add(new MediaResource());
+
+        //initializing .env variables
+        EnvLoader.envInit();
+        CosmosConnection.dbInit();
     }
 
     @Override
