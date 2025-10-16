@@ -8,11 +8,6 @@ import org.jboss.resteasy.annotations.Body;
 @Path("/legoset")
 public class LegoSetResource {
 
-    public String createLegoSet() {
-
-        return null;
-    }
-
     @POST
     @Path("/{id}/comment/post")
     @Consumes(MediaType.TEXT_PLAIN)
