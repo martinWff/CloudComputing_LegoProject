@@ -13,11 +13,6 @@ import jakarta.ws.rs.core.Response;
 @Path("/legoset")
 public class LegoSetResource {
 
-    public String createLegoSet() {
-
-        return null;
-    }
-
     @POST
     @Path("/{id}/comment/post")
     @Consumes(MediaType.TEXT_PLAIN)
