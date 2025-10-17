@@ -18,6 +18,7 @@ public class MainApplication extends Application {
         resources.add(UserResource.class);
         resources.add(LegoSetResource.class);
         resources.add(CosmosConnection.class);
+        resources.add(AuctionResource.class);
         singletons.add(new MediaResource());
 
         //initializing .env variables
