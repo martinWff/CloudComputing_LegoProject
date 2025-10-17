@@ -89,7 +89,11 @@ public class SentimentAnalysisFunction {
         SentimentConfidenceScores scores = documentSentiment.getConfidenceScores();
         double score = scores.getPositive();
         double confidence = Math.max(Math.max(scores.getPositive(), scores.getNegative()), scores.getNeutral());
-        return new SentimentResult(documentSentiment.getSentiment().toString(), score, confidence);
+
+        // Determine if Lego is liked or not
+        String sentimentLabel = score > 0.5 ? "Liked" : "Not Liked";  // Threshold for "liked" sentiment
+
+        return new SentimentResult(documentSentiment.getSentiment().toString(), score, confidence, sentimentLabel);
     }
 
     private SentimentResult getFromCache(String cacheKey) {
@@ -124,11 +128,13 @@ public class SentimentAnalysisFunction {
         public String sentiment;
         public double score;
         public double confidence;
+        public String sentimentLabel;
 
-        public SentimentResult(String sentiment, double score, double confidence) {
+        public SentimentResult(String sentiment, double score, double confidence,String sentimentLabel) {
             this.sentiment = sentiment;
             this.score = score;
             this.confidence = confidence;
+            this.sentimentLabel=sentimentLabel;
         }
     }
 }
