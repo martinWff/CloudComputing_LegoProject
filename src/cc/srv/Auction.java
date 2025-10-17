@@ -6,7 +6,7 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 
 public class Auction {
-    private int id;
+    private String id;
 
     private LegoSet product;
 
@@ -22,16 +22,22 @@ public class Auction {
 
     }
 
-    public Auction(int id,LegoSet product) {
+    public Auction(String id,LegoSet product) {
         this.id = id;
         this.product = product;
     }
 
-    public void setId(int id) {
+    public Auction(String id,LegoSet product,float bid) {
+        this.id = id;
+        this.product = product;
+        this.currentBid = bid;
+    }
+
+    public void setId(String id) {
         this.id = id;
     }
 
-    public int getId() {
+    public String getId() {
         return id;
     }
 
