@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import cc.srv.db.CosmosConnection;
+import cc.srv.db.UserContFunctions;
 import cc.utils.EnvLoader;
 import jakarta.ws.rs.core.Application;
 
@@ -18,12 +19,14 @@ public class MainApplication extends Application {
         resources.add(UserResource.class);
         resources.add(LegoSetResource.class);
         resources.add(CosmosConnection.class);
+        resources.add(UserContFunctions.class);
         resources.add(AuctionResource.class);
         singletons.add(new MediaResource());
 
         //initializing .env variables
         EnvLoader.envInit();
         CosmosConnection.dbInit();
+        
     }
 
     @Override
@@ -35,4 +38,6 @@ public class MainApplication extends Application {
     public Set<Object> getSingletons() {
         return singletons;
     }
+
+
 }

@@ -7,8 +7,6 @@ import com.azure.cosmos.CosmosDatabase;
 
 import cc.utils.EnvLoader;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
 
 //@Path("/db")
 
@@ -45,7 +43,6 @@ public class CosmosConnection{
         return db;
     }
 
-
     //initialization function
     //@PostConstruct
     public static void dbInit()
@@ -55,13 +52,10 @@ public class CosmosConnection{
         client = GetDBClient();
         db = getDatabase();
 
-        System.out.println(client + "\n" + db + "\n");
+        System.out.println(client + "client \n" + db + " database \n");
     }
 
-
-    @GET
-    @Path("/testdbconn")
-    public void TestConn() {
+    public static void TestConn() {
         CosmosClient tempclient = null;
         try {
             // Build the client

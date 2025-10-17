@@ -1,21 +1,35 @@
 package cc.srv;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
+import java.sql.Timestamp;
+
 public class AuctionCreationData {
-    private int id;
+    private String productId;
+    private float basePrice;
+
 
     public AuctionCreationData() {
 
     }
 
-    public AuctionCreationData(int id) {
-        this.id = id;
+    public AuctionCreationData(String id) {
+        this.productId = id;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public void setProductId(String id) {
+        this.productId = id;
     }
 
-    public int getId() {
-        return id;
+    public String getProductId() {
+        return productId;
+    }
+
+    public float getBasePrice() {
+        return basePrice;
+    }
+
+    public void setBasePrice(float basePrice) {
+        this.basePrice = basePrice;
     }
 }

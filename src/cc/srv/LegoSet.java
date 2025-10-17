@@ -1,8 +1,8 @@
 package cc.srv;
 
 public class LegoSet {
-    private int productId;
-    private int serialNumber;
+    private String productId;
+    private String serialNumber;
 
     private String name;
 
@@ -14,7 +14,7 @@ public class LegoSet {
 
     }
 
-    public LegoSet(int productId,int serialNumber,String name,String description,String[] photos) {
+    public LegoSet(String productId,String serialNumber,String name,String description,String[] photos) {
         this.productId = productId;
         this.serialNumber = serialNumber;
         this.name = name;
@@ -22,7 +22,7 @@ public class LegoSet {
         this.photos = photos;
     }
 
-    public LegoSet(int productId,int serialNumber,String name,String description,String photo) {
+    public LegoSet(String productId,String serialNumber,String name,String description,String photo) {
         this.productId = productId;
         this.serialNumber = serialNumber;
         this.name = name;
@@ -30,19 +30,19 @@ public class LegoSet {
         this.photos = new String[] {photo};
     }
 
-    public void setProductId(int id) {
+    public void setProductId(String id) {
         this.productId = id;
     }
 
-    public int getProductId() {
+    public String getProductId() {
         return this.productId;
     }
 
-    public void setSerialNumber(int n) {
+    public void setSerialNumber(String n) {
         this.serialNumber = n;
     }
 
-    public int getSerialNumber() {
+    public String getSerialNumber() {
         return serialNumber;
     }
 
