@@ -8,8 +8,30 @@
     <properties> 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>  
         <authors>XXXXX-YYYYY-ZZZZZa</authors> 
+        <azure.functions.java.library.version>2.0.1</azure.functions.java.library.version>
+        <azure.functions.maven.plugin.version>1.27.0</azure.functions.maven.plugin.version>
+        <azure.textanalytics.version>5.2.0</azure.textanalytics.version>
+        <jackson.version>2.15.2</jackson.version>
+        <functionAppName>lego-function-app</functionAppName>
+        <functionAppRegion>norwayeast</functionAppRegion>
+        <functionResourceGroup>Project</functionResourceGroup>
     </properties>  
-    <dependencies> 
+    <dependencies>
+        <dependency>
+            <groupId>com.microsoft.azure.functions</groupId>
+            <artifactId>azure-functions-java-library</artifactId>
+            <version>${azure.functions.java.library.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.azure</groupId>
+            <artifactId>azure-ai-textanalytics</artifactId>
+            <version>${azure.textanalytics.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
         <dependency> 
             <groupId>jakarta.ws.rs</groupId>  
             <artifactId>jakarta.ws.rs-api</artifactId>  
@@ -85,10 +107,28 @@
             <artifactId>azure-core</artifactId>
             <version>1.52.0</version> 
         </dependency>
-        <!-- end custom dependencies --> 
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.13.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>3.12.4</version> 
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>1.7.32</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>  
     <build> 
-        <sourceDirectory>src</sourceDirectory>  
+        <sourceDirectory>src</sourceDirectory>
+        <testDirectory>test</testDirectory>
         <plugins> 
             <plugin> 
                 <artifactId>maven-compiler-plugin</artifactId>  
