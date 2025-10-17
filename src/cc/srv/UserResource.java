@@ -9,11 +9,10 @@ import jakarta.ws.rs.core.Response;
 
 @Path("/user")
 public class UserResource {
-
     @GET
-    @Path("/list")
+    @Path("/list/{bruh}")
     @Produces(MediaType.APPLICATION_JSON)
-    public User[] listOfUsers() {
+    public User[] listOfUsers(@PathParam("bruh") String bruh ) {
         return new User[] {new User(1,"Martin"),new User(2,"Hooman Beans"),new User(3,"Rackday")};
     }
 
