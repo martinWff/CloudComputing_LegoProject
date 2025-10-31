@@ -85,6 +85,13 @@
             <artifactId>azure-core</artifactId>
             <version>1.52.0</version> 
         </dependency>
+
+        <!-- hashing dependency -->
+        <dependency>
+            <groupId>org.mindrot</groupId>
+            <artifactId>jbcrypt</artifactId>
+            <version>0.4</version>
+        </dependency>
         <!-- end custom dependencies --> 
     </dependencies>  
     <build> 

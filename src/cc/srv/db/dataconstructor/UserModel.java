@@ -1,8 +1,9 @@
 package cc.srv.db.dataconstructor;
 
 import java.time.Instant; //library to get the instant time of the server.
+import java.util.UUID; //library to make password hashing
 
-import java.util.UUID;
+import org.mindrot.jbcrypt.BCrypt;
 
 public class UserModel {
 
@@ -21,8 +22,19 @@ public class UserModel {
         this.id = UUID.randomUUID().toString(); //creates a random num id to use in the db.
         this.username = username;
         this.email = email;
-        this.passwordHash = passwordHash;
+        this.passwordHash = Hashed(passwordHash);
         this.DateOfCreation = Instant.now().toString(); //gets a current timestamp of the server
+    }
+
+    private String Hashed(String pass)
+    {
+        //this does the actual salt of the password
+        return BCrypt.hashpw(pass, BCrypt.gensalt(12));
+    }
+
+    public static boolean verify(String plainPass, String hashed)
+    {
+        return BCrypt.checkpw(plainPass, hashed);
     }
 
     //getters and setters
