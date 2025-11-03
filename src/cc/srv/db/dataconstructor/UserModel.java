@@ -23,7 +23,7 @@ public class UserModel {
 
         this.id = UUID.randomUUID().toString(); //creates a random num id to use in the db.
         this.username = username;
-        this.email = email;
+        this.email = email.toLowerCase();
         this.password = Hashed(passwordHash);
         this.DateOfCreation = Instant.now().toString(); //gets a current timestamp of the server
         this.LastUpdate = this.DateOfCreation;
