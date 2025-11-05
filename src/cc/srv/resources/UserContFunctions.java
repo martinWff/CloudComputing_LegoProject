@@ -1,14 +1,10 @@
-package cc.srv.db;
+package cc.srv.resources;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
+import cc.srv.db.CosmosConnection;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.models.CosmosItemRequestOptions;
@@ -21,16 +17,11 @@ import com.azure.cosmos.models.SqlQuerySpec;
 import com.azure.cosmos.util.CosmosPagedIterable;
 
 import cc.srv.db.dataconstructor.UserModel;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DefaultValue;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
+import com.fasterxml.jackson.annotation.JsonView;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
 
 @Path("/user")
@@ -46,6 +37,8 @@ public class UserContFunctions {
     @Path("/createUser")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @JsonView(UserModel.PublicView.class)
+
     public Response createUser(UserModel newUserData) {
         //System.out.println("Entry na function insert db");
         try {
@@ -89,15 +82,16 @@ public class UserContFunctions {
     }
 
     @GET
-    @Path("/retrieve/{id}")
+    @Path("/retrieve")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getUserByEmail(@PathParam("email") String email) {
+    @JsonView(UserModel.PublicView.class)
+    public Response getUserByEmail(@QueryParam("username") String username, @QueryParam("id") String id) {
         try {
 
             //Query Cosmos DB for the given email
-            String query = "SELECT * FROM c WHERE c.email = @email";
+            String query = "SELECT c.id,c.username, c.dateOfCreation FROM c WHERE c.id = @id OR c.username = @username";
             SqlQuerySpec querySpec = new SqlQuerySpec(query,
-                    Arrays.asList(new SqlParameter("@email", email)));
+                    Arrays.asList(new SqlParameter("@username", username),new SqlParameter("@id", id)));
 
             CosmosQueryRequestOptions options = new CosmosQueryRequestOptions();
 

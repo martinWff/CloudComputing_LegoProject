@@ -1,5 +1,6 @@
-package cc.srv;
+package cc.srv.resources;
 
+import cc.srv.*;
 import cc.srv.db.CosmosConnection;
 import cc.srv.db.dataconstructor.UserModel;
 import com.azure.cosmos.CosmosContainer;

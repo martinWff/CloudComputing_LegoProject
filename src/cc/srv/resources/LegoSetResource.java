@@ -1,5 +1,8 @@
-package cc.srv;
+package cc.srv.resources;
 
+import cc.srv.Comment;
+import cc.srv.LegoSetCreationData;
+import cc.srv.StatusMessage;
 import cc.srv.db.CosmosConnection;
 import cc.srv.db.dataconstructor.LegoSetModel;
 import cc.srv.db.dataconstructor.MediaModel;
@@ -23,10 +26,12 @@ public class LegoSetResource {
     @POST
     @Path("/{id}/comment/post")
     @Consumes(MediaType.TEXT_PLAIN)
-    public Response postComment(@PathParam("id") int legoSetId, String text) {
+    @Produces(MediaType.APPLICATION_JSON)
+    public StatusMessage postComment(@CookieParam("Session") String session,@PathParam("id") int legoSetId, String text) {
+        System.out.println("session "+session);
         System.out.println(text);
 
-        return Response.status(Response.Status.OK).build();
+        return StatusMessage.Success();
     }
 
     @GET

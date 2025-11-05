@@ -3,20 +3,52 @@ package cc.srv.db.dataconstructor;
 import java.time.Instant; //library to get the instant time of the server.
 import java.util.UUID; //library to make password hashing
 
+import com.fasterxml.jackson.annotation.JsonView;
 import org.mindrot.jbcrypt.BCrypt;
 
 public class UserModel {
 
+    public interface PublicView {}
+    public interface InternalView extends PublicView {}
+
+
     private String id;
+
     private String username;
+
+    @JsonView(InternalView.class)
     private String email;
+    @JsonView(InternalView.class)
     private String password;
     private String DateOfCreation;
-    private String LastUpdate;
+    @JsonView(InternalView.class)
+    private String lastUpdate;
     private Boolean status;
 
     public UserModel() {
 
+    }
+
+    public UserModel(String uuid,String username, String email, String passwordHash,String dateOfCreation,Boolean status) {
+
+        this.id = uuid; //creates a random num id to use in the db.
+        this.username = username;
+        this.email = email;
+        this.password = passwordHash;
+        this.DateOfCreation = dateOfCreation; //gets a current timestamp of the server
+        this.lastUpdate = this.DateOfCreation;
+        this.status = status;
+    }
+
+    public UserModel(UserModel other) {
+
+        this.id = other.id; //creates a random num id to use in the db.
+        this.username = other.username;
+        this.email = other.email;
+        this.password = other.password;
+        this.DateOfCreation = other.DateOfCreation; //gets a current timestamp of the server
+        this.lastUpdate = other.lastUpdate;
+        this.status = other.status;
     }
 
     public UserModel(String username, String email, String passwordHash,Boolean status) {
@@ -26,19 +58,19 @@ public class UserModel {
         this.email = email.toLowerCase();
         this.password = Hashed(passwordHash);
         this.DateOfCreation = Instant.now().toString(); //gets a current timestamp of the server
-        this.LastUpdate = this.DateOfCreation;
+        this.lastUpdate = this.DateOfCreation;
         this.status = status;
-    }
-
-    private String Hashed(String pass)
-    {
-        //this does the actual salt of the password
-        return BCrypt.hashpw(pass, BCrypt.gensalt(12));
     }
 
     public static boolean verify(String plainPass, String hashed)
     {
         return BCrypt.checkpw(plainPass, hashed);
+    }
+
+    public static String Hashed(String pass)
+    {
+        //this does the actual salt of the password
+        return BCrypt.hashpw(pass, BCrypt.gensalt(12));
     }
 
     //getters and setters
@@ -71,7 +103,7 @@ public class UserModel {
     }
 
     public void setPassword(String passwordHash) {
-        this.password = Hashed(passwordHash);
+        this.password = passwordHash;
     }
 
     public String getDateOfCreation() {
@@ -83,11 +115,11 @@ public class UserModel {
     }
 
     public String getLastUpdate() {
-        return LastUpdate;
+        return lastUpdate;
     }
 
     public void setLastUpdate() {
-        this.LastUpdate = Instant.now().toString();
+        this.lastUpdate = Instant.now().toString();
     }
 
     public Boolean getStatus() {
