@@ -1,78 +1,98 @@
 package cc.srv;
 
-import java.util.List;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
-import jakarta.ws.rs.GET;
+import com.azure.storage.blob.BlobClient;
+import com.azure.storage.blob.BlobContainerClient;
+import com.azure.storage.blob.BlobContainerClientBuilder;
+import com.azure.storage.blob.BlobServiceClient;
+import com.azure.storage.blob.BlobServiceClientBuilder;
+
+import cc.utils.EnvLoader;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.ServiceUnavailableException;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-/**
- * Resource for managing media files, such as images.
- */
 @Path("/media")
 public class MediaResource {
 
-    // @POST
-    // @Path("/upload")
-    // @Consumes(MediaType.MULTIPART_FORM_DATA)
-    // @Produces(MediaType.APPLICATION_JSON)
-    // public Response uploadImage(@FormDataParam("file") InputStream fileInputStream,
-    //         @FormDataParam("file") FormDataContentDisposition fileDetail) {
+    //private static final String CONTAINER_URL = EnvLoader.GetImg_Container();
+    // //private static final String container_url = EnvLoader.GetImg_Container();
+    // private static final String container_url = "https://legocontainer.blob.core.windows.net/images";
+    // private static final String containerName = container_url.substring(container_url.lastIndexOf("/") + 1);
 
-    //     try {
-    //         // 1️⃣ Connect to Azure Blob Storage
-    //         String connectStr = "<YOUR_STORAGE_CONNECTION_STRING>";
-    //         BlobServiceClient blobServiceClient = new BlobServiceClientBuilder()
-    //                 .connectionString(connectStr)
-    //                 .buildClient();
+    // int firstSlashIndex = container_url.indexOf('/', 8); // skip "https://"
+    // String baseUrl = (firstSlashIndex != -1) ? container_url.substring(0, firstSlashIndex) : container_url;
 
-    //         BlobContainerClient containerClient = blobServiceClient.getBlobContainerClient("images");
+    @POST
+    @Path("/teste")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response uploadFile(InputStream inputStream, @Context HttpHeaders headers) {
+        try {
+            // Extract boundary from Content-Type header
+            String contentType = headers.getHeaderString("Content-Type");
+            if (contentType == null || !contentType.contains("boundary=")) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity("Missing boundary in Content-Type").build();
+            }
 
-    //         // 2️⃣ Create a blob name (e.g., with UUID to avoid collisions)
-    //         String blobName = UUID.randomUUID().toString() + "-" + fileDetail.getFileName();
-    //         BlobClient blobClient = containerClient.getBlobClient(blobName);
+            String boundary = "--" + contentType.split("boundary=")[1];
 
-    //         // 3️⃣ Upload the file
-    //         blobClient.upload(fileInputStream, fileInputStream.available(), true);
+            // Read the input into memory (for testing only)
+            String body = new String(inputStream.readAllBytes(), StandardCharsets.ISO_8859_1);
 
-    //         // 4️⃣ Build URL to store in Cosmos DB
-    //         String imageUrl = blobClient.getBlobUrl();
+            // Extract filename from multipart headers
+            String filename = null;
+            for (String part : body.split(boundary)) {
+                if (part.contains("Content-Disposition")) {
+                    int idx = part.indexOf("filename=\"");
+                    if (idx != -1) {
+                        filename = part.substring(idx + 10, part.indexOf("\"", idx + 10));
+                        break;
+                    }
+                }
+            }
 
-    //         // 5️⃣ Save URL in Cosmos DB (example for a LegoSet)
-    //         LegoSet legoSet = new LegoSet();
-    //         legoSet.setName("My Lego Set");
-    //         legoSet.setImageUrl(imageUrl); // save the path in DB
-    //         LegoSetResponse response = LegoSetsCont.createItem(legoSet); // your Cosmos DB code
+            if (filename == null) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity("No file part found").build();
+            }
 
-    //         return Response.ok(response.getItem()).build();
+            // ✅ Convert body to bytes (in a real app, isolate file data properly)
+            byte[] fileBytes = body.getBytes(StandardCharsets.ISO_8859_1);
 
-    //     } catch (Exception e) {
-    //         e.printStackTrace();
-    //         return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-    //                 .entity("{\"error\": \"" + e.getMessage() + "\"}")
-    //                 .build();
-    //     }
-    // }
+            // ✅ Create Azure Blob client
+            BlobContainerClient serviceClient = new BlobContainerClientBuilder()
+                    .endpoint(EnvLoader.GetImg_Container())
+                    //.credential(new DefaultAzureCredentialBuilder().build())
+                    .buildClient();
 
-   
-    @GET
-    @Path("/{id}")
-    @Produces("media/*")
-    public Response download(@PathParam("id") String id) {
-        throw new ServiceUnavailableException();
+            // BlobContainerClient containerClient = serviceClient.getBlobContainerClient(containerName);
+            // if (!containerClient.exists()) {
+            //     containerClient.create();
+            // }
+
+            BlobClient blobClient = serviceClient.getBlobClient(filename);
+            // ✅ Upload file (overwrite if exists)
+            blobClient.upload(new ByteArrayInputStream(fileBytes), fileBytes.length, true);
+
+            // ✅ Get blob URL
+            String blobUrl = blobClient.getBlobUrl();
+            return Response.ok("{\"message\":\"Upload successful\", \"url\":\"" + blobUrl + "\"}").build();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("Error reading file: " + e.getMessage()).build();
+        }
     }
 
-    /**
-     * Lists the ids of images stored.
-     */
-    @GET
-    @Path("/")
-    @Produces(MediaType.APPLICATION_JSON)
-    public List<String> list() {
-        throw new ServiceUnavailableException();
-    }
 }

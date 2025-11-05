@@ -89,7 +89,7 @@ public class UserContFunctions {
     }
 
     @GET
-    @Path("/retrieve/{id}")
+    @Path("/retrieve/{email}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getUserByEmail(@PathParam("email") String email) {
         try {

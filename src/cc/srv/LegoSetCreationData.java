@@ -2,11 +2,8 @@ package cc.srv;
 
 public class LegoSetCreationData {
     private String name;
-
     private String description;
-
     private int yearOfProduction;
-
     private String[] photos;
 
 

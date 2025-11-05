@@ -16,7 +16,6 @@ public class MainApplication extends Application {
     public MainApplication() {
         System.out.println("main app");
         resources.add(ControlResource.class);
-        resources.add(UserResource.class);
         resources.add(LegoSetResource.class);
         resources.add(CosmosConnection.class);
         resources.add(UserContFunctions.class);
