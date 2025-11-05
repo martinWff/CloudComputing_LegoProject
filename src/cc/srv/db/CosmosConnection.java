@@ -14,8 +14,8 @@ import jakarta.enterprise.context.ApplicationScoped;
 public class CosmosConnection{
 
     // Replace with your real values (to do: find way to use the real link without hardcoding it EX: azure app configurator)
-    private static final String ENDPOINT = EnvLoader.GetDBEndpoint();
-    private static final String KEY = EnvLoader.GetDBKeys();
+    private static final String ENDPOINT = EnvLoader.getVariable("db_endpoint");
+    private static final String KEY = EnvLoader.getVariable("db_key");
 
     //store the database thats actually gonna be used from cosmosDB
      private static CosmosDatabase db;
@@ -37,7 +37,7 @@ public class CosmosConnection{
 
     public static synchronized CosmosDatabase getDatabase() {
         if (db == null) {
-            db = GetDBClient().getDatabase(EnvLoader.GetDBName());
+            db = GetDBClient().getDatabase(EnvLoader.getVariable("db_name"));
             
         }
         return db;

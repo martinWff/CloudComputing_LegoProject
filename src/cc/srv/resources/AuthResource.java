@@ -1,8 +1,10 @@
 package cc.srv.resources;
 
 import cc.srv.db.CosmosConnection;
+import cc.srv.db.RedisConnection;
 import cc.srv.db.dataconstructor.AuthModel;
 import cc.srv.db.dataconstructor.UserModel;
+import cc.utils.EnvLoader;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.models.CosmosQueryRequestOptions;
@@ -10,17 +12,50 @@ import com.azure.cosmos.models.SqlParameter;
 import com.azure.cosmos.models.SqlQuerySpec;
 import com.azure.cosmos.util.CosmosPagedIterable;
 import com.fasterxml.jackson.annotation.JsonView;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.json.bind.Jsonb;
+import jakarta.json.bind.JsonbBuilder;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.params.GetExParams;
 
+import java.security.SecureRandom;
 import java.util.Arrays;
+import java.util.Base64;
 
 @Path("/auth")
 public class AuthResource {
 
     private final CosmosContainer UsersCont = CosmosConnection.getDatabase().getContainer("Users");
+
+    private static final int EXPIRATION = Integer.parseInt(EnvLoader.getVariable("session_expiration"));
+
+    private static final SecureRandom random = new SecureRandom();
+
+    private static String GenerateSessionToken() {
+        byte[] arr = new byte[32];
+        random.nextBytes(arr);
+
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(arr);
+    }
+
+    public static UserModel getUserFromToken(String tkn) {
+        try (Jedis jedis = RedisConnection.getCachePool().getResource()) {
+
+            Jsonb builder = JsonbBuilder.create();
+
+            GetExParams p = new GetExParams();
+            p.ex(EXPIRATION);
+            String v = jedis.getEx("session:"+tkn,p);
+
+            return builder.fromJson(v, UserModel.class);
+
+        }
+    }
+
     @POST
     @Path("/login")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -47,17 +82,27 @@ public class AuthResource {
             if (results.iterator().hasNext()) {
                 UserModel model = results.iterator().next();
 
-                System.out.println("model found "+authModel.getPassword()+" - "+model.getPassword());
                 if (AuthModel.Verify(authModel.getPassword(),model.getPassword())) {
-                    System.out.println("password found");
+
+                    String tkn = GenerateSessionToken();
+
                     cookie = new NewCookie.Builder("Session")
-                            .value("user2")
+                            .value(tkn)
                             .path("/")
-                            .maxAge(360)
+                            .maxAge(EXPIRATION)
                             .sameSite(NewCookie.SameSite.LAX)
                             .build();
 
                     displayModel = new UserModel(model.getId(),model.getUsername(),null,null,model.getDateOfCreation(),model.getStatus());
+
+                    try (Jedis jedis = RedisConnection.getCachePool().getResource()) {
+
+                        ObjectMapper mapper = new ObjectMapper();
+
+                        jedis.setex("session:"+tkn,EXPIRATION,mapper.writeValueAsString(displayModel));
+
+                    }
+
                 }
 
             }

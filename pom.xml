@@ -72,6 +72,11 @@
             <version>3.0.1</version>
         </dependency>
 
+        <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+            <version>6.2.0</version>
+        </dependency>
         <!-- TO DO: ask if we can use this dependency since it for entrerprises only --> 
         <dependency>
             <groupId>jakarta.enterprise</groupId>
@@ -79,6 +84,7 @@
             <version>4.0.1</version>
             <scope>provided</scope>
         </dependency>
+
 
         <dependency>
             <groupId>com.azure</groupId>
