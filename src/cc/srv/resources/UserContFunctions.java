@@ -1,14 +1,12 @@
-package cc.srv.db;
+package cc.srv.resources;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.time.Instant;
+import java.util.*;
 
+import cc.srv.db.CosmosConnection;
+import cc.srv.db.dataconstructor.UserProfile;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.models.CosmosItemRequestOptions;
@@ -21,15 +19,8 @@ import com.azure.cosmos.models.SqlQuerySpec;
 import com.azure.cosmos.util.CosmosPagedIterable;
 
 import cc.srv.db.dataconstructor.UserModel;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DefaultValue;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
+import com.fasterxml.jackson.annotation.JsonView;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -42,10 +33,14 @@ public class UserContFunctions {
 
     private final CosmosContainer UsersCont = CosmosConnection.getDatabase().getContainer(UserContName);
 
+    public static final UserProfile DeletedUser = new UserProfile("DeletedUser","Deleted User", Instant.now(),null);
+
     @POST
     @Path("/createUser")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @JsonView(UserModel.PublicView.class)
+
     public Response createUser(UserModel newUserData) {
         //System.out.println("Entry na function insert db");
         try {
@@ -70,7 +65,7 @@ public class UserContFunctions {
                     newUserData.getUsername(),
                     newUserData.getEmail(),
                     newUserData.getPassword(),
-                    newUserData.getStatus()
+                    newUserData.getIsDeleted()
             );
 
             //use this cosmosItemResponse when creating updating or replacing entries on the db
@@ -89,15 +84,16 @@ public class UserContFunctions {
     }
 
     @GET
-    @Path("/retrieve/{email}")
+    @Path("/retrieve")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getUserByEmail(@PathParam("email") String email) {
+    @JsonView(UserModel.PublicView.class)
+    public Response getUserByEmail(@QueryParam("username") String username, @QueryParam("id") String id) {
         try {
 
             //Query Cosmos DB for the given email
-            String query = "SELECT * FROM c WHERE c.email = @email";
+            String query = "SELECT c.id,c.username, c.dateOfCreation FROM c WHERE c.id = @id OR c.username = @username";
             SqlQuerySpec querySpec = new SqlQuerySpec(query,
-                    Arrays.asList(new SqlParameter("@email", email)));
+                    Arrays.asList(new SqlParameter("@username", username),new SqlParameter("@id", id)));
 
             CosmosQueryRequestOptions options = new CosmosQueryRequestOptions();
 
@@ -137,6 +133,14 @@ public class UserContFunctions {
                     .entity("{\"error\":\"Unexpected error: " + e.getMessage() + "\"}")
                     .build();
         }
+    }
+
+    @GET
+    @Path("/profile")
+    public UserProfile getProfile(@CookieParam("Session") String session) {
+        UserProfile model = AuthResource.getUserFromToken(session);
+
+        return model;
     }
 
     // @GET
@@ -219,8 +223,8 @@ public class UserContFunctions {
             if (updatedUserData.getPassword() != null) {
                 existingUser.setPassword(updatedUserData.getPassword());
             }
-            if (updatedUserData.getStatus() != null) {
-                existingUser.setStatus(updatedUserData.getStatus());
+            if (updatedUserData.getIsDeleted() != null) {
+                existingUser.setIsDeleted(updatedUserData.getIsDeleted());
             }
 
             existingUser.setLastUpdate();//
@@ -280,7 +284,7 @@ public class UserContFunctions {
             //checking if the id is correct and it is
             System.out.println("Updating ID: " + existingUser.getId());
             //Apply updates only to provided fields in the json body
-            existingUser.setStatus(true);
+            existingUser.setIsDeleted(true);
             existingUser.setLastUpdate();//
 
             //where actual changes happen

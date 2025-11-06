@@ -4,7 +4,11 @@ import java.util.HashSet;
 import java.util.Set;
 
 import cc.srv.db.CosmosConnection;
-import cc.srv.db.UserContFunctions;
+import cc.srv.db.RedisConnection;
+import cc.srv.resources.AuctionResource;
+import cc.srv.resources.AuthResource;
+import cc.srv.resources.LegoSetResource;
+import cc.srv.resources.UserContFunctions;
 import cc.utils.EnvLoader;
 import jakarta.ws.rs.core.Application;
 
@@ -18,12 +22,14 @@ public class MainApplication extends Application {
         resources.add(ControlResource.class);
         resources.add(LegoSetResource.class);
         resources.add(CosmosConnection.class);
+        resources.add(RedisConnection.class);
         resources.add(UserContFunctions.class);
         resources.add(AuctionResource.class);
+        resources.add(AuthResource.class);
         singletons.add(new MediaResource());
 
         //initializing .env variables
-        EnvLoader.envInit();
+        EnvLoader.init();
         CosmosConnection.dbInit();
         
     }

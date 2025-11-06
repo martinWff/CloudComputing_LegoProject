@@ -1,38 +1,45 @@
 package cc.srv;
 
+import cc.TimestampSerializer;
+import cc.srv.db.dataconstructor.UserProfile;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import java.sql.Timestamp;
+import java.time.Instant;
 
 public class Comment {
-    private String author;
+    private String id;
+
+    private UserProfile author;
 
     private String content;
 
-    @JsonFormat(pattern = "dd/MM/yyyy hh:mm:ss a")
-    private Timestamp timestamp;
+    @JsonSerialize(using = TimestampSerializer.class)
+    private Instant timestamp;
 
     public Comment() {
 
     }
-    public Comment(String author,String content,Timestamp ts) {
+    public Comment(String id,UserProfile author,String content,Instant ts) {
+        this.id = id;
         this.author = author;
         this.content = content;
         this.timestamp = ts;
     }
 
-    public Comment(String author,String content) {
+    public Comment(String id,UserProfile author,String content) {
+        this.id = id;
         this.author = author;
         this.content = content;
-        this.timestamp = new Timestamp(System.currentTimeMillis());
+        this.timestamp = Instant.now();
     }
 
-    public String getAuthor() {
+    public UserProfile getAuthor() {
         return this.author;
     }
 
-    public void setAuthor(String a) {
+    public void setAuthor(UserProfile a) {
         this.author = a;
     }
 
@@ -44,11 +51,11 @@ public class Comment {
         this.content = c;
     }
 
-    public Timestamp getTimestamp() {
+    public Instant getTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(Timestamp t) {
+    public void setTimestamp(Instant t) {
         this.timestamp = t;
     }
 }

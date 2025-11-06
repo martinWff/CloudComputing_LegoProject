@@ -3,37 +3,58 @@ package cc.srv.db.dataconstructor;
 import java.time.Instant; //library to get the instant time of the server.
 import java.util.UUID; //library to make password hashing
 
+import com.fasterxml.jackson.annotation.JsonView;
 import org.mindrot.jbcrypt.BCrypt;
 
-public class UserModel {
+public class UserModel extends UserProfile {
 
-    private String id;
-    private String username;
+    public interface PublicView {}
+    public interface InternalView extends PublicView {}
+
+    @JsonView(InternalView.class)
     private String email;
+    @JsonView(InternalView.class)
     private String password;
-    private String DateOfCreation;
-    private String LastUpdate;
-    private Boolean status;
+    @JsonView(InternalView.class)
+    private String lastUpdate;
+    private boolean isDeleted;
 
     public UserModel() {
 
     }
 
-    public UserModel(String username, String email, String passwordHash,Boolean status) {
+    public UserModel(String uuid,String username, String email, String passwordHash,Instant dateOfCreation,String avatar,Boolean status) {
 
-        this.id = UUID.randomUUID().toString(); //creates a random num id to use in the db.
-        this.username = username;
-        this.email = email.toLowerCase();
-        this.password = Hashed(passwordHash);
-        this.DateOfCreation = Instant.now().toString(); //gets a current timestamp of the server
-        this.LastUpdate = this.DateOfCreation;
-        this.status = status;
+        super(uuid,username,dateOfCreation,avatar);
+        this.email = email;
+        this.password = passwordHash;
+        this.lastUpdate = dateOfCreation.toString();
+        this.isDeleted = status;
     }
 
-    private String Hashed(String pass)
-    {
-        //this does the actual salt of the password
-        return BCrypt.hashpw(pass, BCrypt.gensalt(12));
+    public UserModel(UserModel other) {
+
+        super(other.getId(), other.getUsername(), other.getDateOfCreation(),other.getAvatar());
+        this.email = other.email;
+        this.password = other.password;
+        this.lastUpdate = other.lastUpdate;
+        this.isDeleted = other.isDeleted;
+    }
+
+    public UserModel(UserProfile profile,String email,String password,Boolean status) {
+        super(profile);
+        this.email = email;
+        this.password = password;
+        this.isDeleted = status;
+    }
+
+    public UserModel(String username, String email, String passwordHash,Boolean status) {
+
+        super(UUID.randomUUID().toString(),username,Instant.now());
+        this.email = email.toLowerCase();
+        this.password = Hashed(passwordHash);
+        this.lastUpdate = this.getDateOfCreation().toString();
+        this.isDeleted = status;
     }
 
     public static boolean verify(String plainPass, String hashed)
@@ -41,23 +62,13 @@ public class UserModel {
         return BCrypt.checkpw(plainPass, hashed);
     }
 
+    public static String Hashed(String pass)
+    {
+        //this does the actual salt of the password
+        return BCrypt.hashpw(pass, BCrypt.gensalt(12));
+    }
+
     //getters and setters
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
     public String getEmail() {
         return email;
     }
@@ -71,31 +82,23 @@ public class UserModel {
     }
 
     public void setPassword(String passwordHash) {
-        this.password = Hashed(passwordHash);
-    }
-
-    public String getDateOfCreation() {
-        return DateOfCreation;
-    }
-
-    public void setDateOfCreation(String dateOfCreation) {
-        this.DateOfCreation = dateOfCreation;
+        this.password = passwordHash;
     }
 
     public String getLastUpdate() {
-        return LastUpdate;
+        return lastUpdate;
     }
 
     public void setLastUpdate() {
-        this.LastUpdate = Instant.now().toString();
+        this.lastUpdate = Instant.now().toString();
     }
 
-    public Boolean getStatus() {
-        return status;
+    public Boolean getIsDeleted() {
+        return isDeleted;
     }
 
-    public void setStatus(Boolean status) {
-        this.status = status;
+    public void setIsDeleted(Boolean isDeleted) {
+        this.isDeleted = isDeleted;
     }
 
 }
