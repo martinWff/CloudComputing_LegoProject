@@ -6,60 +6,55 @@ import java.util.UUID; //library to make password hashing
 import com.fasterxml.jackson.annotation.JsonView;
 import org.mindrot.jbcrypt.BCrypt;
 
-public class UserModel {
+public class UserModel extends UserProfile {
 
     public interface PublicView {}
     public interface InternalView extends PublicView {}
-
-
-    private String id;
-
-    private String username;
 
     @JsonView(InternalView.class)
     private String email;
     @JsonView(InternalView.class)
     private String password;
-    private String DateOfCreation;
     @JsonView(InternalView.class)
     private String lastUpdate;
-    private Boolean status;
+    private boolean isDeleted;
 
     public UserModel() {
 
     }
 
-    public UserModel(String uuid,String username, String email, String passwordHash,String dateOfCreation,Boolean status) {
+    public UserModel(String uuid,String username, String email, String passwordHash,Instant dateOfCreation,String avatar,Boolean status) {
 
-        this.id = uuid; //creates a random num id to use in the db.
-        this.username = username;
+        super(uuid,username,dateOfCreation,avatar);
         this.email = email;
         this.password = passwordHash;
-        this.DateOfCreation = dateOfCreation; //gets a current timestamp of the server
-        this.lastUpdate = this.DateOfCreation;
-        this.status = status;
+        this.lastUpdate = dateOfCreation.toString();
+        this.isDeleted = status;
     }
 
     public UserModel(UserModel other) {
 
-        this.id = other.id; //creates a random num id to use in the db.
-        this.username = other.username;
+        super(other.getId(), other.getUsername(), other.getDateOfCreation(),other.getAvatar());
         this.email = other.email;
         this.password = other.password;
-        this.DateOfCreation = other.DateOfCreation; //gets a current timestamp of the server
         this.lastUpdate = other.lastUpdate;
-        this.status = other.status;
+        this.isDeleted = other.isDeleted;
+    }
+
+    public UserModel(UserProfile profile,String email,String password,Boolean status) {
+        super(profile);
+        this.email = email;
+        this.password = password;
+        this.isDeleted = status;
     }
 
     public UserModel(String username, String email, String passwordHash,Boolean status) {
 
-        this.id = UUID.randomUUID().toString(); //creates a random num id to use in the db.
-        this.username = username;
+        super(UUID.randomUUID().toString(),username,Instant.now());
         this.email = email.toLowerCase();
         this.password = Hashed(passwordHash);
-        this.DateOfCreation = Instant.now().toString(); //gets a current timestamp of the server
-        this.lastUpdate = this.DateOfCreation;
-        this.status = status;
+        this.lastUpdate = this.getDateOfCreation().toString();
+        this.isDeleted = status;
     }
 
     public static boolean verify(String plainPass, String hashed)
@@ -74,22 +69,6 @@ public class UserModel {
     }
 
     //getters and setters
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
     public String getEmail() {
         return email;
     }
@@ -106,14 +85,6 @@ public class UserModel {
         this.password = passwordHash;
     }
 
-    public String getDateOfCreation() {
-        return DateOfCreation;
-    }
-
-    public void setDateOfCreation(String dateOfCreation) {
-        this.DateOfCreation = dateOfCreation;
-    }
-
     public String getLastUpdate() {
         return lastUpdate;
     }
@@ -122,12 +93,12 @@ public class UserModel {
         this.lastUpdate = Instant.now().toString();
     }
 
-    public Boolean getStatus() {
-        return status;
+    public Boolean getIsDeleted() {
+        return isDeleted;
     }
 
-    public void setStatus(Boolean status) {
-        this.status = status;
+    public void setIsDeleted(Boolean isDeleted) {
+        this.isDeleted = isDeleted;
     }
 
 }

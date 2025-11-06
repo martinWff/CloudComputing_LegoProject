@@ -3,6 +3,7 @@ package cc.srv.resources;
 import cc.srv.db.CosmosConnection;
 import cc.srv.db.RedisConnection;
 import cc.srv.db.dataconstructor.AuthModel;
+import cc.srv.db.dataconstructor.UserProfile;
 import cc.srv.db.dataconstructor.UserModel;
 import cc.utils.EnvLoader;
 import com.azure.cosmos.CosmosContainer;
@@ -20,11 +21,10 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.params.GetExParams;
 
 import java.security.SecureRandom;
-import java.util.Arrays;
-import java.util.Base64;
+import java.time.Instant;
+import java.util.*;
 
 @Path("/auth")
 public class AuthResource {
@@ -42,17 +42,20 @@ public class AuthResource {
         return Base64.getUrlEncoder().withoutPadding().encodeToString(arr);
     }
 
-    public static UserModel getUserFromToken(String tkn) {
+    public static UserProfile getUserFromToken(String tkn) {
         try (Jedis jedis = RedisConnection.getCachePool().getResource()) {
 
             Jsonb builder = JsonbBuilder.create();
 
-            GetExParams p = new GetExParams();
-            p.ex(EXPIRATION);
-            String v = jedis.getEx("session:"+tkn,p);
+            String v = jedis.get("session:"+tkn);
+            jedis.expire("session:"+tkn,EXPIRATION);
 
-            return builder.fromJson(v, UserModel.class);
+            if (v == null || v.length() == 0)
+                return null;
 
+            UserProfile c =builder.fromJson(v, UserProfile.class);
+
+            return c;
         }
     }
 
@@ -78,7 +81,7 @@ public class AuthResource {
             );
 
             NewCookie cookie = null;
-            UserModel displayModel = null;
+            UserProfile displayModel = null;
             if (results.iterator().hasNext()) {
                 UserModel model = results.iterator().next();
 
@@ -93,13 +96,13 @@ public class AuthResource {
                             .sameSite(NewCookie.SameSite.LAX)
                             .build();
 
-                    displayModel = new UserModel(model.getId(),model.getUsername(),null,null,model.getDateOfCreation(),model.getStatus());
+                    displayModel = new UserProfile(model.getId(),model.getUsername(),model.getDateOfCreation(),model.getAvatar());
 
                     try (Jedis jedis = RedisConnection.getCachePool().getResource()) {
 
                         ObjectMapper mapper = new ObjectMapper();
 
-                        jedis.setex("session:"+tkn,EXPIRATION,mapper.writeValueAsString(displayModel));
+                        jedis.setex("session:"+tkn,EXPIRATION,mapper.writeValueAsString(new UserProfile(displayModel.getId(),displayModel.getUsername(),displayModel.getDateOfCreation(), displayModel.getAvatar())));
 
                     }
 
@@ -126,31 +129,42 @@ public class AuthResource {
     @JsonView(UserModel.PublicView.class)
     public Response register(UserModel userModel) {
 
-        System.out.println(userModel.getId());
-        System.out.println(userModel.getUsername());
-        System.out.println(userModel.getEmail());
-        System.out.println(userModel.getPassword());
         try {
 
+            if (verifyUser(userModel.getEmail()))
+                return Response.ok("Email already in use").build();
 
             UserModel newUser = new UserModel(
+                    UUID.randomUUID().toString(),
                     userModel.getUsername(),
                     userModel.getEmail(),
-                    userModel.getPassword(),
-                    userModel.getStatus()
+                    UserModel.Hashed(userModel.getPassword()),
+                    Instant.now(),
+                    null,
+                    userModel.getIsDeleted()
             );
 
             UsersCont.createItem(newUser);
 
-            UserModel displayModel = new UserModel(newUser.getId(),newUser.getUsername(),null,null,newUser.getDateOfCreation(),newUser.getStatus());
+
+            String tkn = GenerateSessionToken();
 
             NewCookie cookie = new NewCookie.Builder("Session")
-                    .value("user2")
+                    .value(tkn)
                     .path("/")
-                    .maxAge(360)
+                    .maxAge(EXPIRATION)
                     .sameSite(NewCookie.SameSite.LAX)
                     .build();
 
+            UserProfile displayModel = new UserProfile(newUser.getId(),newUser.getUsername(),newUser.getDateOfCreation(),newUser.getAvatar());
+
+            try (Jedis jedis = RedisConnection.getCachePool().getResource()) {
+
+                ObjectMapper mapper = new ObjectMapper();
+
+                jedis.setex("session:"+tkn,EXPIRATION,mapper.writeValueAsString(new UserProfile(displayModel.getId(),displayModel.getUsername(),displayModel.getDateOfCreation(), displayModel.getAvatar())));
+
+            }
 
             return Response.ok(displayModel).cookie(cookie).build();
         } catch (CosmosException ex) {
@@ -169,6 +183,9 @@ public class AuthResource {
     @Path("/logout")
     public Response logout(@CookieParam("Session") String session) {
 
+        if (session == null)
+            return Response.ok().build();
+
         NewCookie cookie = new NewCookie.Builder("Session")
                 .value(null)
                 .path("/")
@@ -176,9 +193,40 @@ public class AuthResource {
                 .sameSite(NewCookie.SameSite.LAX)
                 .build();
 
+        try (Jedis jedis = RedisConnection.getCachePool().getResource()) {
+            jedis.del("Session:"+session);
+        }
 
         return Response.ok().cookie(cookie).build();
 
 
+    }
+
+
+    public boolean verifyUser(String email) {
+        try {
+            //Query Cosmos DB for the given email
+            String query = "SELECT * FROM c WHERE c.email = @email";
+            SqlQuerySpec querySpec = new SqlQuerySpec(query,
+                    Arrays.asList(new SqlParameter("@email", email)));
+
+            CosmosQueryRequestOptions options = new CosmosQueryRequestOptions();
+
+            CosmosPagedIterable<UserModel> results = UsersCont.queryItems(
+                    querySpec,
+                    options,
+                    UserModel.class
+            );
+
+            return results.iterator().hasNext();
+
+        } catch (CosmosException e) {
+            // Handle Cosmos DB-specific errors (e.g., connection or query failure)
+            return false;
+
+        } catch (Exception e) {
+            // Handle unexpected exceptions
+            return false;
+        }
     }
 }
