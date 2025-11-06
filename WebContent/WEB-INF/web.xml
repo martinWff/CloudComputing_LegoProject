@@ -29,6 +29,12 @@
     <param-name>resteasy.servlet.mapping.prefix</param-name>
     <param-value>/rest</param-value>
   </context-param>
+
+  <!-- new stuff-->
+  <context-param>
+    <param-name>resteasy.allow.dot.in.path</param-name>
+    <param-value>true</param-value>
+</context-param>
 </web-app>
  
  
