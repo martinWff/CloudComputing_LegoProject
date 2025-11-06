@@ -63,7 +63,7 @@ public class LegoSetResource {
     @GET
     @Path("/{id}/comment/list")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<Comment> listComments(@PathParam("id") String legoSetId, @QueryParam("after") String page,@QueryParam("limit") Integer limit) {
+    public List<Comment> listComments(@PathParam("id") String legoSetId, @QueryParam("before") String page,@QueryParam("limit") Integer limit) {
 
         try {
 
@@ -78,14 +78,15 @@ public class LegoSetResource {
                 Instant instant = Instant.parse(page);
                 long ts = instant.getEpochSecond();
 
-                commentQuerySpec = new SqlQuerySpec("SELECT * FROM c WHERE c.productId = @productId AND c.timestamp < @timestamp ORDER BY c.timestamp DESC", Arrays.asList(new SqlParameter("@productId",legoSetId),new SqlParameter("@timestamp",ts)));
+                commentQuerySpec = new SqlQuerySpec("SELECT TOP @lim * FROM c WHERE c.productId = @productId AND c.timestamp < @timestamp ORDER BY c.timestamp DESC", Arrays.asList(new SqlParameter("@productId",legoSetId),new SqlParameter("@timestamp",ts), new SqlParameter("@lim",lim)));
 
             } else {
-                commentQuerySpec = new SqlQuerySpec("SELECT * FROM c WHERE c.productId = @productId ORDER BY c.timestamp DESC", Arrays.asList(new SqlParameter("@productId",legoSetId)));
+                commentQuerySpec = new SqlQuerySpec("SELECT TOP @lim * FROM c WHERE c.productId = @productId ORDER BY c.timestamp DESC", Arrays.asList(new SqlParameter("@productId",legoSetId), new SqlParameter("@lim",lim)));
             }
 
 
             CosmosQueryRequestOptions options = new CosmosQueryRequestOptions();
+
             CosmosPagedIterable<CommentModel> commentResults = CommentsCont.queryItems(commentQuerySpec,options, CommentModel.class);
 
 
