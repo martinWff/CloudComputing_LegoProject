@@ -1,12 +1,13 @@
 package cc.srv.db.dataconstructor;
 
-import cc.TimestampSerializer;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
-import java.sql.Timestamp;
 import java.time.Instant;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
+import cc.TimestampSerializer;
+
 public class UserProfile {
+
     private String id;
 
     private String username;
@@ -15,22 +16,25 @@ public class UserProfile {
     private Instant dateOfCreation;
 
     private String avatar;
+    private int power;
 
     public UserProfile() {
 
     }
 
-    public UserProfile(String id, String username, Instant dateOfCreation) {
+    public UserProfile(String id, String username, Instant dateOfCreation,int power) {
         this.id = id;
         this.username = username;
         this.dateOfCreation = dateOfCreation;
+        this.power = power;
     }
 
-    public UserProfile(String id, String username, Instant dateOfCreation,String avatar) {
+    public UserProfile(String id, String username, Instant dateOfCreation, String avatar,int power) {
         this.id = id;
         this.username = username;
         this.dateOfCreation = dateOfCreation;
         this.avatar = avatar;
+        this.power = power;
     }
 
     public UserProfile(UserProfile other) {
@@ -71,4 +75,13 @@ public class UserProfile {
     public void setAvatar(String avatar) {
         this.avatar = avatar;
     }
+
+    public int getPower() {
+        return power;
+    }
+
+    public void setPower(int power) {
+        this.power = power;
+    }
+
 }
