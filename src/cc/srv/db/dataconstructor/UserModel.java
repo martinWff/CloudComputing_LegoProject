@@ -3,13 +3,17 @@ package cc.srv.db.dataconstructor;
 import java.time.Instant; //library to get the instant time of the server.
 import java.util.UUID; //library to make password hashing
 
-import com.fasterxml.jackson.annotation.JsonView;
 import org.mindrot.jbcrypt.BCrypt;
+
+import com.fasterxml.jackson.annotation.JsonView;
 
 public class UserModel extends UserProfile {
 
-    public interface PublicView {}
-    public interface InternalView extends PublicView {}
+    public interface PublicView {
+    }
+
+    public interface InternalView extends PublicView {
+    }
 
     @JsonView(InternalView.class)
     private String email;
@@ -23,9 +27,10 @@ public class UserModel extends UserProfile {
 
     }
 
-    public UserModel(String uuid,String username, String email, String passwordHash,Instant dateOfCreation,String avatar,Boolean status) {
+    public UserModel(String uuid, String username, String email,
+            String passwordHash, Instant dateOfCreation, String avatar, Boolean status,int power) {
 
-        super(uuid,username,dateOfCreation,avatar);
+        super(uuid, username, dateOfCreation, avatar,power);
         this.email = email;
         this.password = passwordHash;
         this.lastUpdate = dateOfCreation.toString();
@@ -34,36 +39,34 @@ public class UserModel extends UserProfile {
 
     public UserModel(UserModel other) {
 
-        super(other.getId(), other.getUsername(), other.getDateOfCreation(),other.getAvatar());
+        super(other.getId(), other.getUsername(), other.getDateOfCreation(), other.getAvatar(),other.getPower());
         this.email = other.email;
         this.password = other.password;
         this.lastUpdate = other.lastUpdate;
         this.isDeleted = other.isDeleted;
     }
 
-    public UserModel(UserProfile profile,String email,String password,Boolean status) {
+    public UserModel(UserProfile profile, String email, String password, Boolean status) {
         super(profile);
         this.email = email;
         this.password = password;
         this.isDeleted = status;
     }
 
-    public UserModel(String username, String email, String passwordHash,Boolean status) {
+    public UserModel(String username, String email, String passwordHash, Boolean status, int power) {
 
-        super(UUID.randomUUID().toString(),username,Instant.now());
+        super(UUID.randomUUID().toString(), username, Instant.now(),power);
         this.email = email.toLowerCase();
         this.password = Hashed(passwordHash);
         this.lastUpdate = this.getDateOfCreation().toString();
         this.isDeleted = status;
     }
 
-    public static boolean verify(String plainPass, String hashed)
-    {
+    public static boolean verify(String plainPass, String hashed) {
         return BCrypt.checkpw(plainPass, hashed);
     }
 
-    public static String Hashed(String pass)
-    {
+    public static String Hashed(String pass) {
         //this does the actual salt of the password
         return BCrypt.hashpw(pass, BCrypt.gensalt(12));
     }

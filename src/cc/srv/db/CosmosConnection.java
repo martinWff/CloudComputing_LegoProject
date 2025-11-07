@@ -52,7 +52,7 @@ public class CosmosConnection{
         client = GetDBClient();
         db = getDatabase();
 
-        System.out.println(client + "client \n" + db + " database \n");
+        //System.out.println(client + "client \n" + db + " database \n");
     }
 
     public static void TestConn() {
@@ -67,14 +67,14 @@ public class CosmosConnection{
                     .buildClient();
 
             // Try listing databases to verify access
-            System.out.println("✅ Connection successful! Listing databases:");
+            System.out.println("Connection successful! Listing databases:");
 
             tempclient.readAllDatabases().forEach(dbases -> {
                 System.out.println(" - " + dbases.getId());
             });
 
         } catch (Exception e) {
-            System.err.println("❌ Failed to connect to Cosmos DB: " + e.getMessage());
+            System.err.println("Failed to connect to Cosmos DB: " + e.getMessage());
             e.printStackTrace();
         } finally {
             if (tempclient != null) {

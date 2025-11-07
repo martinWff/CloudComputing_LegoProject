@@ -3,10 +3,13 @@ package cc.srv.resources;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
-import cc.srv.db.CosmosConnection;
-import cc.srv.db.dataconstructor.UserProfile;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.models.CosmosItemRequestOptions;
@@ -17,10 +20,21 @@ import com.azure.cosmos.models.PartitionKey;
 import com.azure.cosmos.models.SqlParameter;
 import com.azure.cosmos.models.SqlQuerySpec;
 import com.azure.cosmos.util.CosmosPagedIterable;
-
-import cc.srv.db.dataconstructor.UserModel;
 import com.fasterxml.jackson.annotation.JsonView;
-import jakarta.ws.rs.*;
+
+import cc.srv.db.CosmosConnection;
+import cc.srv.db.dataconstructor.UserModel;
+import cc.srv.db.dataconstructor.UserProfile;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.CookieParam;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -33,14 +47,13 @@ public class UserContFunctions {
 
     private final CosmosContainer UsersCont = CosmosConnection.getDatabase().getContainer(UserContName);
 
-    public static final UserProfile DeletedUser = new UserProfile("DeletedUser","Deleted User", Instant.now(),null);
+    public static final UserProfile DeletedUser = new UserProfile("DeletedUser", "Deleted User", Instant.now(), null,0);
 
     @POST
     @Path("/createUser")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @JsonView(UserModel.PublicView.class)
-
     public Response createUser(UserModel newUserData) {
         //System.out.println("Entry na function insert db");
         try {
@@ -65,8 +78,13 @@ public class UserContFunctions {
                     newUserData.getUsername(),
                     newUserData.getEmail(),
                     newUserData.getPassword(),
-                    newUserData.getIsDeleted()
+                    newUserData.getIsDeleted(),
+
+                    //always set new users as client(1) the higher the number the higher the credential
+                    1
             );
+
+            
 
             //use this cosmosItemResponse when creating updating or replacing entries on the db
             CosmosItemResponse<UserModel> testResponse = UsersCont.createItem(newUser);
@@ -89,11 +107,10 @@ public class UserContFunctions {
     @JsonView(UserModel.PublicView.class)
     public Response getUserByEmail(@QueryParam("username") String username, @QueryParam("id") String id) {
         try {
-
             //Query Cosmos DB for the given email
             String query = "SELECT c.id,c.username, c.dateOfCreation FROM c WHERE c.id = @id OR c.username = @username";
             SqlQuerySpec querySpec = new SqlQuerySpec(query,
-                    Arrays.asList(new SqlParameter("@username", username),new SqlParameter("@id", id)));
+                    Arrays.asList(new SqlParameter("@username", username), new SqlParameter("@id", id)));
 
             CosmosQueryRequestOptions options = new CosmosQueryRequestOptions();
 
@@ -139,7 +156,6 @@ public class UserContFunctions {
     @Path("/profile")
     public UserProfile getProfile(@CookieParam("Session") String session) {
         UserProfile model = AuthResource.getUserFromToken(session);
-
         return model;
     }
 
@@ -184,6 +200,39 @@ public class UserContFunctions {
         }
     }
 
+    public int getCredential(String id) {
+        try {
+            //Query Cosmos DB for the given email
+            String query = "SELECT * FROM c WHERE c.id = @id";
+            SqlQuerySpec querySpec = new SqlQuerySpec(query,
+                    Arrays.asList(new SqlParameter("@id", id)));
+
+            CosmosQueryRequestOptions options = new CosmosQueryRequestOptions();
+            CosmosPagedIterable<UserModel> results = UsersCont.queryItems(
+                    querySpec,
+                    options,
+                    UserModel.class
+            );
+
+            UserModel user = results.stream().findFirst().orElse(null);
+
+            if (user != null) {
+                System.out.println("User found: " + user.getUsername());
+                return user.getPower();
+            } else {
+                System.out.println("No user found with that email.");
+                return -1;
+            }
+
+        } catch (CosmosException e) {
+            return -2;
+
+        } catch (Exception e) {
+            // Handle unexpected exceptions
+            return -3;
+        }
+    }
+
     @PUT
     @Path("/update/{email}")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -223,11 +272,14 @@ public class UserContFunctions {
             if (updatedUserData.getPassword() != null) {
                 existingUser.setPassword(updatedUserData.getPassword());
             }
-            if (updatedUserData.getIsDeleted() != null) {
-                existingUser.setIsDeleted(updatedUserData.getIsDeleted());
+            // if (updatedUserData.getIsDeleted() != null) {
+            //     existingUser.setIsDeleted(updatedUserData.getIsDeleted());
+            // }
+            if (updatedUserData.getPower() > 0) {
+                existingUser.setPower(updatedUserData.getPower());
             }
 
-            existingUser.setLastUpdate();//
+            existingUser.setLastUpdate();
 
             //where actual changes happen
             UsersCont.replaceItem(
@@ -257,11 +309,12 @@ public class UserContFunctions {
     @GET
     @Path("/delete/{email}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response updateUserMail(
+    public Response deleteUserMail(
             @PathParam("email") String email) {
         try {
             //Find the user by email (query instead of readItem)
             String query = "SELECT * FROM c WHERE c.email = @email";
+
             SqlQuerySpec querySpec = new SqlQuerySpec(
                     query,
                     Arrays.asList(new SqlParameter("@email", email))
@@ -280,6 +333,69 @@ public class UserContFunctions {
                         .entity("{\"error\":\"User not found\"}")
                         .build();
             }
+
+            //checking if the id is correct and it is
+            System.out.println("Updating ID: " + existingUser.getId());
+            //Apply updates only to provided fields in the json body
+            existingUser.setIsDeleted(true);
+            existingUser.setLastUpdate();//
+
+            //where actual changes happen
+            UsersCont.replaceItem(
+                    existingUser,
+                    existingUser.getId(), // the document’s id (from the DB)
+                    new PartitionKey(existingUser.getId()), // partition key = id (because the way that the container is setup)
+                    new CosmosItemRequestOptions()
+            );
+
+            //Return success response
+            return Response.ok(existingUser).build();
+
+        } catch (CosmosException e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("{\"error\":\"Cosmos DB error: " + e.getMessage() + "\"}")
+                    .build();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("{\"error\":\"Unexpected error: " + e.getMessage() + "\"}")
+                    .build();
+        }
+    }
+
+    @GET
+    @Path("/delete")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response deleteUserId(
+            @QueryParam("email") String email,@CookieParam("Session") String session) {
+        try {
+            //Find the user by email (query instead of readItem)
+            String query = "SELECT * FROM c WHERE c.email = @email";
+
+            SqlQuerySpec querySpec = new SqlQuerySpec(
+                    query,
+                    Arrays.asList(new SqlParameter("@email", email))
+            );
+
+            CosmosPagedIterable<UserModel> users = UsersCont.queryItems(
+                    querySpec,
+                    new CosmosQueryRequestOptions(),
+                    UserModel.class
+            );
+
+            //Check if user exists
+            UserModel existingUser = users.stream().findFirst().orElse(null);
+            if (existingUser == null) {
+                return Response.status(Response.Status.NOT_FOUND)
+                        .entity("{\"error\":\"User not found\"}")
+                        .build();
+            }
+
+            //compares credentials
+            // UserProfile teste = AuthModel.getUserFromToken(session);
+            // getCredential()
 
             //checking if the id is correct and it is
             System.out.println("Updating ID: " + existingUser.getId());

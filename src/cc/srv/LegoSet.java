@@ -3,11 +3,8 @@ package cc.srv;
 public class LegoSet {
     private String productId;
     private String serialNumber;
-
     private String name;
-
     private String description;
-
     private String[] photos;
 
     public LegoSet() {

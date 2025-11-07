@@ -1,11 +1,11 @@
 package cc.srv.resources;
 
-import cc.srv.db.CosmosConnection;
-import cc.srv.db.RedisConnection;
-import cc.srv.db.dataconstructor.AuthModel;
-import cc.srv.db.dataconstructor.UserProfile;
-import cc.srv.db.dataconstructor.UserModel;
-import cc.utils.EnvLoader;
+import java.security.SecureRandom;
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.UUID;
+
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.models.CosmosQueryRequestOptions;
@@ -14,17 +14,25 @@ import com.azure.cosmos.models.SqlQuerySpec;
 import com.azure.cosmos.util.CosmosPagedIterable;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import cc.srv.db.CosmosConnection;
+import cc.srv.db.RedisConnection;
+import cc.srv.db.dataconstructor.AuthModel;
+import cc.srv.db.dataconstructor.UserModel;
+import cc.srv.db.dataconstructor.UserProfile;
+import cc.utils.EnvLoader;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
-import jakarta.ws.rs.*;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.CookieParam;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
 import redis.clients.jedis.Jedis;
-
-import java.security.SecureRandom;
-import java.time.Instant;
-import java.util.*;
 
 @Path("/auth")
 public class AuthResource {
@@ -96,18 +104,15 @@ public class AuthResource {
                             .sameSite(NewCookie.SameSite.LAX)
                             .build();
 
-                    displayModel = new UserProfile(model.getId(),model.getUsername(),model.getDateOfCreation(),model.getAvatar());
+                    displayModel = new UserProfile(model.getId(),model.getUsername(),model.getDateOfCreation(),model.getAvatar(),model.getPower());
 
                     try (Jedis jedis = RedisConnection.getCachePool().getResource()) {
 
                         ObjectMapper mapper = new ObjectMapper();
 
-                        jedis.setex("session:"+tkn,EXPIRATION,mapper.writeValueAsString(new UserProfile(displayModel.getId(),displayModel.getUsername(),displayModel.getDateOfCreation(), displayModel.getAvatar())));
-
+                        jedis.setex("session:"+tkn,EXPIRATION,mapper.writeValueAsString(new UserProfile(displayModel.getId(),displayModel.getUsername(),displayModel.getDateOfCreation(), displayModel.getAvatar(),displayModel.getPower())));
                     }
-
                 }
-
             }
 
             return Response.ok(displayModel).cookie(cookie).build();
@@ -118,8 +123,6 @@ public class AuthResource {
             System.err.println("Err: "+ex);
             return null;
         }
-
-
     }
 
     @POST
@@ -141,7 +144,8 @@ public class AuthResource {
                     UserModel.Hashed(userModel.getPassword()),
                     Instant.now(),
                     null,
-                    userModel.getIsDeleted()
+                    userModel.getIsDeleted(),
+                    userModel.getPower()
             );
 
             UsersCont.createItem(newUser);
@@ -156,13 +160,13 @@ public class AuthResource {
                     .sameSite(NewCookie.SameSite.LAX)
                     .build();
 
-            UserProfile displayModel = new UserProfile(newUser.getId(),newUser.getUsername(),newUser.getDateOfCreation(),newUser.getAvatar());
+            UserProfile displayModel = new UserProfile(newUser.getId(),newUser.getUsername(),newUser.getDateOfCreation(),newUser.getAvatar(),newUser.getPower());
 
             try (Jedis jedis = RedisConnection.getCachePool().getResource()) {
 
                 ObjectMapper mapper = new ObjectMapper();
 
-                jedis.setex("session:"+tkn,EXPIRATION,mapper.writeValueAsString(new UserProfile(displayModel.getId(),displayModel.getUsername(),displayModel.getDateOfCreation(), displayModel.getAvatar())));
+                jedis.setex("session:"+tkn,EXPIRATION,mapper.writeValueAsString(new UserProfile(displayModel.getId(),displayModel.getUsername(),displayModel.getDateOfCreation(), displayModel.getAvatar(),displayModel.getPower())));
 
             }
 
@@ -198,8 +202,6 @@ public class AuthResource {
         }
 
         return Response.ok().cookie(cookie).build();
-
-
     }
 
 
@@ -217,9 +219,7 @@ public class AuthResource {
                     options,
                     UserModel.class
             );
-
             return results.iterator().hasNext();
-
         } catch (CosmosException e) {
             // Handle Cosmos DB-specific errors (e.g., connection or query failure)
             return false;
