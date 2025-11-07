@@ -1,5 +1,6 @@
 package cc.srv.resources;
 
+import cc.UserDataAccess;
 import cc.srv.Comment;
 import cc.srv.LegoSetCreationData;
 import cc.srv.StatusMessage;
@@ -94,17 +95,20 @@ public class LegoSetResource {
                     .map(CommentModel::getAuthor)
                     .collect(Collectors.toSet());
 
-            SqlQuerySpec usersQuerySpec = new SqlQuerySpec("SELECT * FROM c WHERE c.isDeleted = false AND ARRAY_CONTAINS(@userIds,c.id)", Arrays.asList(new SqlParameter("@userIds",new ArrayList<>(userIds))));
+            //SqlQuerySpec usersQuerySpec = new SqlQuerySpec("SELECT * FROM c WHERE c.isDeleted = false AND ARRAY_CONTAINS(@userIds,c.id)", Arrays.asList(new SqlParameter("@userIds",new ArrayList<>(userIds))));
 
 
-            CosmosPagedIterable<UserProfile> usersResults = UsersCont.queryItems(usersQuerySpec,options, UserProfile.class);
+           // CosmosPagedIterable<UserProfile> usersResults = UsersCont.queryItems(usersQuerySpec,options, UserProfile.class);
 
-            Map<String, UserProfile> usersById = usersResults.stream()
-                    .collect(Collectors.toMap(UserProfile::getId, u -> u));
+          /*  Map<String, UserProfile> usersById = usersResults.stream()
+                    .collect(Collectors.toMap(UserProfile::getId, u -> u));*/
+            UserProfile[] payload = UserDataAccess.retrieveUserProfiles(userIds.toArray(String[]::new));
+            Map<String,UserProfile> usersById = Arrays.stream(payload).collect(Collectors.toMap(UserProfile::getId, u -> u));
+
 
             List<Comment> result = commentResults.stream()
                     .map(commentModel -> {
-                        UserProfile userProfile = usersById.getOrDefault(commentModel.getAuthor(),UserContFunctions.DeletedUser);
+                        UserProfile userProfile = usersById.getOrDefault(commentModel.getAuthor(),UserDataAccess.DeletedUser);
                         return new Comment(commentModel.getId(),userProfile,commentModel.getContent(), commentModel.getTimestamp());
                     })
                     .collect(Collectors.toList());
