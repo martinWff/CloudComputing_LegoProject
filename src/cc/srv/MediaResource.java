@@ -120,17 +120,22 @@ public class MediaResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response uploadFile(@Context HttpHeaders headers, InputStream inputStream) {
         try {
+
             //Read all bytes from the input stream 
             byte[] fileBytes = inputStream.readAllBytes();
-            // 🔹 Get filename from header (simplified for Insomnia/browser upload)
+
+            //Get filename from header (simplified for Insomnia/browser upload)
             String contentDisposition = headers.getHeaderString("Content-Disposition");
+
             String filename = "unknown";
             if (contentDisposition != null && contentDisposition.contains("filename=")) {
                 filename = contentDisposition.split("filename=")[1].replace("\"", "").trim();
             }
-            // 🔹 Compute SHA-256 hash of the FILE CONTENT (not filename)
+            //Compute SHA-256 hash of the FILE CONTENT
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
+
             byte[] hashBytes = digest.digest(fileBytes);
+
             StringBuilder sb = new StringBuilder();
             for (byte b : hashBytes) {
                 sb.append(String.format("%02x", b));
@@ -142,7 +147,8 @@ public class MediaResource {
                     .endpoint(EnvLoader.getVariable("img_container"))
                     .buildClient();
             BlobClient blobClient = containerClient.getBlobClient(fileHash);
-            // 🔹 If file already exists, don’t upload again
+
+            //If file already exists, don’t upload again
             if (blobClient.exists()) {
                 return Response.status(Response.Status.CONFLICT)
                         .entity("{\"message\":\"File already exists\", \"filename\":\"" + fileHash + "\"}")
@@ -150,7 +156,8 @@ public class MediaResource {
             }
             //Upload new file
             blobClient.upload(new ByteArrayInputStream(fileBytes), fileBytes.length);
-            // 🔹 Store original filename as metadata
+            
+            // Store original filename as metadata
             Map<String, String> metadata = new HashMap<>();
             metadata.put("originalname", filename);
             blobClient.setMetadata(metadata);
@@ -245,13 +252,13 @@ public class MediaResource {
                 in.close();
             };
 
-            // 🔹 Detect MIME type
+            //Detect MIME type
             String contentType = Files.probeContentType(Paths.get(originalName));
             if (contentType == null) {
                 contentType = "application/octet-stream";
             }
 
-            // 🔹 Return as if it’s the original file
+            //Return as if it’s the original file
             return Response.ok(stream, contentType)
                     .header("Content-Disposition", "inline; filename=\"" + originalName + "\"")
                     .build();
