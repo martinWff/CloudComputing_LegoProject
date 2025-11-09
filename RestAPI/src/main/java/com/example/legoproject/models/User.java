@@ -16,7 +16,7 @@ public class User extends UserProfile {
 
     }
 
-    public User(String uuid, String username, String email,String passwordHash, Instant dateOfCreation, String avatar, Boolean status, int power) {
+    public User(String uuid, String username, String email,String passwordHash, Instant dateOfCreation, MediaDataDTO avatar, Boolean status, int power) {
 
         super(uuid, username, dateOfCreation, avatar,power);
         this.email = email;

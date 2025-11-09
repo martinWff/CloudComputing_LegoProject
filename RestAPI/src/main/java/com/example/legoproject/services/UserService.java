@@ -3,6 +3,8 @@ package com.example.legoproject.services;
 import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosException;
+import com.azure.cosmos.implementation.patch.PatchOperation;
+import com.azure.cosmos.implementation.patch.PatchOperationCore;
 import com.azure.cosmos.models.*;
 import com.azure.cosmos.util.CosmosPagedIterable;
 import com.example.legoproject.models.*;
@@ -18,6 +20,10 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.json.JsonBuilderFactory;
 import redis.clients.jedis.params.GetExParams;
 
+import java.lang.reflect.Field;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.*;
@@ -32,6 +38,7 @@ public class UserService {
     private final CosmosContainer sessionContainer;
     private final JedisPool jedisPool;
 
+    private final MediaService mediaService;
     @Autowired
     private ObjectMapper objectMapper;
 
@@ -41,11 +48,12 @@ public class UserService {
     private int redisExpiration = 3600;
 
     @Autowired
-    public UserService(CosmosClient cosmosClient, String databaseName,JedisPool jedisPool) {
+    public UserService(CosmosClient cosmosClient, String databaseName,MediaService mediaService,JedisPool jedisPool) {
         this.cosmosClient = cosmosClient;
         this.container = cosmosClient.getDatabase(databaseName).getContainer("Users");
         this.sessionContainer = cosmosClient.getDatabase(databaseName).getContainer("Sessions");
         this.jedisPool = jedisPool;
+        this.mediaService = mediaService;
 
         this.secureRandom = new SecureRandom();
     }
@@ -278,6 +286,44 @@ public class UserService {
 
     }
 
+    public UserSessionData register(String username,String email,String password) {
+
+        User user = new User(UUID.randomUUID().toString(),username,email,hashPassword(password),Instant.now(),null,true,1);
+
+
+        if (!verifyEmail(user.getEmail()))
+        {
+            container.createItem(user);
+
+            String sessionToken = generateSessionToken();
+
+
+            UserProfile profile =new UserProfile(user.getId(),user.getUsername(),user.getDateOfCreation(),user.getAvatar(),user.getPower());
+
+            try (Jedis jedis = jedisPool.getResource()) {
+
+                try {
+                    jedis.setex("session:"+sessionToken,redisExpiration,objectMapper.writeValueAsString(profile));
+                } catch (Exception e) {
+                    System.err.println("Err: "+e);
+                }
+
+
+            }
+
+            UserSessionData sessionData = new UserSessionData(profile,sessionToken);
+
+            sessionContainer.createItem(new SessionData(sessionToken,sessionData.profile));
+
+            return sessionData;
+
+        } else {
+
+            return null;
+        }
+
+    }
+
     public String getSessionByUser(String userId) {
 
         SqlQuerySpec querySpec = new SqlQuerySpec("SELECT * FROM c WHERE c.user = @userId",
@@ -402,6 +448,137 @@ public class UserService {
 
     public String hashPassword(String password) {
         return BCrypt.hashpw(password, BCrypt.gensalt(12));
+    }
+
+    public User getUserDataById(String userId) {
+
+        String query = "SELECT c.id,c.username, c.dateOfCreation FROM c WHERE c.isDeleted = false AND c.id = @id";
+        SqlQuerySpec querySpec = new SqlQuerySpec(query,
+                Arrays.asList(new SqlParameter("@id", userId)));
+
+        CosmosQueryRequestOptions options = new CosmosQueryRequestOptions();
+
+        CosmosPagedIterable<User> results = container.queryItems(
+                querySpec,
+                options,
+                User.class
+        );
+
+        //Checks if we found any results
+        Iterator<User> iterator = results.iterator();
+
+        if (iterator.hasNext()) {
+
+            return iterator.next();
+
+        } else {
+            return null;
+        }
+
+    }
+
+    public UserProfile updateUser(String userId,UserUpdateData updateData) {
+
+        CosmosPatchOperations op = CosmosPatchOperations.create();
+
+        if (updateData.getUsername() != null) {
+            op.replace("/username",updateData.getUsername());
+        }
+
+        if (updateData.getEmail() != null) {
+            op.replace("/email",updateData.getEmail());
+        }
+
+        if (updateData.getPassword() != null) {
+            op.replace("/password",hashPassword(updateData.getPassword()));
+        }
+
+        if (updateData.getAvatar() != null) {
+
+            String avatar = updateData.getAvatar();
+
+            MediaData data = mediaService.getOwnedImage(avatar,userId);
+
+            if (data != null) {
+                op.replace("/avatar", new MediaDataDTO(data.getId(), data.getFile()));
+            }
+        }
+
+        CosmosPatchItemRequestOptions options = new CosmosPatchItemRequestOptions();
+        options.setContentResponseOnWriteEnabled(true);
+
+        CosmosItemResponse<User> userResponse = container.patchItem(userId,new PartitionKey(userId),op,options,User.class);
+
+
+        User user = userResponse.getItem();
+
+        System.out.println(user);
+
+        return new UserProfile(user.getId(),user.getUsername(),user.getDateOfCreation(),user.getAvatar(),user.getPower());
+    }
+
+    public User deleteUser(String userId) {
+
+        CosmosPatchOperations op = CosmosPatchOperations.create();
+
+        op.set("/isDeleted",true);
+
+        CosmosPatchItemRequestOptions options = new CosmosPatchItemRequestOptions();
+        CosmosItemResponse<User> userResponse = container.patchItem(userId,new PartitionKey(userId),op,options,User.class);
+
+        return userResponse.getItem();
+    }
+
+    public Map<String, Object> getProfilesList(String continuationToken, int pageSize) {
+
+        CosmosQueryRequestOptions options = new CosmosQueryRequestOptions();
+        String query = "SELECT * FROM c WHERE c.isDeleted = false";
+
+        String decodedToken = null;
+        if (continuationToken != null && !continuationToken.isBlank()) {
+            try {
+                decodedToken = new String(Base64.getUrlDecoder().decode(continuationToken));
+                //decodedToken = URLDecoder.decode(continuationToken, StandardCharsets.UTF_8);
+            } catch (Exception e) {
+                decodedToken = null; // bad URL encoding, start over
+            }
+        }
+
+        Map<String, Object> map = new HashMap<>();
+
+        try {
+            CosmosPagedIterable<UserProfile> iterable =
+                    container.queryItems(query, options, UserProfile.class);
+
+            Iterator<FeedResponse<UserProfile>> iterator =
+                    iterable.iterableByPage(decodedToken, pageSize).iterator();
+
+            if (!iterator.hasNext()) {
+                map.put("items", List.of());
+                map.put("continuationToken", null);
+                return map;
+            }
+
+            FeedResponse<UserProfile> page = iterator.next();
+            String nextToken = page.getContinuationToken();
+            String safeToken = nextToken == null ? null : Base64.getUrlEncoder().encodeToString(nextToken.getBytes(StandardCharsets.UTF_8));
+
+            map.put("items", page.getResults());
+            map.put("continuationToken", safeToken);
+
+        } catch (CosmosException ce) {
+            // Cosmos refused the token → reset pagination gracefully
+            System.err.println("Cosmos query failed: " + ce.getMessage());
+            map.put("items", List.of());
+            map.put("continuationToken", null);
+        } catch (Exception e) {
+            // unexpected problem
+            System.err.println("Unexpected error querying Cosmos: " + e.getMessage());
+            map.put("items", List.of());
+            map.put("continuationToken", null);
+        }
+
+        return map;
     }
 
 }
