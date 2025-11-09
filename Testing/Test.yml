@@ -1,0 +1,47 @@
+config:
+  target: 'http://DESKTOP-J7UQQUO.lan:8080/project-Legos-1.0/rest'
+  plugins:
+    metrics-by-endpoint:
+      useOnlyRequestNames: true
+  processor: "./test-utils.js"
+
+  phases:
+    - name: "Create & Retrieve Users"
+      duration: 60
+      arrivalRate: 5   # 5 virtual users per second for 1 minute
+
+scenarios:
+  - name: "User lifecycle: create → retrieve"
+    flow:
+      # 1️⃣ Create users
+      - loop:
+        - function: "genNewUser"  # generate username, email, password
+        - post:
+            name: "Create User"
+            url: "/user/createUser"
+            headers:
+              Content-Type: application/json
+              Accept: application/json
+            json:
+              username: "{{ uName }}"
+              email: "{{ uEmail }}"
+              password: "{{ uPwd }}"
+              isDeleted: false
+            capture:
+              json: "$.id"
+              as: "userId"
+            expect:
+              - statusCode: [201, 409]  # Created or already exists
+        - think: 2  # short delay between actions
+
+        # 2️⃣ Retrieve the created user by username
+        - get:
+            name: "Retrieve User"
+            url: "/user/retrieve"
+            qs:
+              username: "{{ uName }}"
+            expect:
+              - statusCode: [200, 404]  # Found or not found
+        - think: 1
+
+        count: 50  # run 50 user creation/retrieval cycles per virtual user

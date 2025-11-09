@@ -1,11 +1,14 @@
 package com.example.legoproject.controllers;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.example.legoproject.models.UserProfile;
 import com.example.legoproject.services.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
-
-import java.time.Instant;
 
 @RestController
 @RequestMapping("/users")
@@ -22,7 +25,6 @@ public class UserController {
 
     @GetMapping("/retrieve")
     public UserProfile getUser(@RequestParam String id) {
-
         UserProfile user = userService.getUser(id);
 
         return user;
