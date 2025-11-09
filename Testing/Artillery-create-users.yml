@@ -1,0 +1,27 @@
+config:
+  target: "http://localhost:8080"
+  phases:
+    - duration: 60
+      arrivalRate: 10
+  defaults:
+    headers:
+      Content-Type: "application/json"
+
+scenarios:
+  - name: Retrieve User by ID
+    flow:
+      - get:
+          url: "/users/retrieve?id={{ userId }}"
+          capture:
+            - json: "$.username"
+              as: "username"
+
+  - name: Retrieve Profile using Cookie
+    flow:
+      - get:
+          url: "/users/profile"
+          headers:
+            Cookie: "Session={{ sessionId }}"
+          capture:
+            - json: "$.username"
+              as: "username"

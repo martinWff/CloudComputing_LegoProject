@@ -1,0 +1,23 @@
+config:
+  target: "http://localhost:8080"
+  phases:
+    - duration: 60
+      arrivalRate: 10
+  defaults:
+    headers:
+      Content-Type: "application/json"
+
+scenarios:
+  - name: "Retrieve Profile using Cookie"
+    flow:
+      - get:
+          url: "/users/profile"
+          headers:
+            Cookie: "Session={{ sessionId }}"
+    variables:
+      # Replace with valid or dummy session tokens from your Redis or Cosmos setup
+      sessionId:
+        - "abc123sessiontoken"
+        - "def456sessiontoken"
+        - "ghi789sessiontoken"
+

@@ -1,0 +1,44 @@
+config:
+  target: "http://localhost:8080"
+  phases:
+    - name: "Warm cache"
+      duration: 60
+      arrivalRate: 10
+    - name: "Stress test"
+      duration: 90
+      arrivalRate: 100
+
+  defaults:
+    headers:
+      Content-Type: "application/json"
+
+scenarios:
+  - name: "Retrieve User by ID"
+    weight: 50
+    flow:
+      - get:
+          url: "/users/retrieve"
+          qs:
+            id: "{{ userId }}"
+    variables:
+      userId:
+        - "user1"
+        - "user2"
+        - "user3"
+        - "user4"
+        - "user5"
+
+  - name: "Retrieve Profile by Session"
+    weight: 50
+    flow:
+      - get:
+          url: "/users/profile"
+          headers:
+            Cookie: "Session={{ sessionId }}"
+    variables:
+      sessionId:
+        - "sess1"
+        - "sess2"
+        - "sess3"
+        - "sess4"
+        - "sess5"

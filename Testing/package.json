@@ -1,5 +1,13 @@
 {
-  "devDependencies": {
-    "@faker-js/faker": "^10.1.0"
+  "name": "legoapi-loadtest",
+  "version": "1.0.0",
+  "description": "Load test suite for Spring Boot + CosmosDB + Redis",
+  "type": "module",
+  "scripts": {
+    "test": "artillery run Artillery-CreateRetrieve.yml"
+  },
+  "dependencies": {
+    "@faker-js/faker": "^9.9.0",
+    "artillery": "^2.0.0"
   }
 }

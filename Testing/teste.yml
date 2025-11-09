@@ -1,0 +1,40 @@
+config:
+  target: "http://localhost:8080"
+  phases:
+    - duration: 60
+      arrivalRate: 5   # 5 virtual users per second
+  processor: "./processors.cjs"
+  defaults:
+    headers:
+      Content-Type: "application/json"
+
+scenarios:
+  - name: "Register fake users"
+    flow:
+      - post:
+          url: "/auth/register"
+          json:
+            username: "{{ username }}"
+            email: "{{ email }}"
+            password: "{{ password }}"
+            avatar: "{{ avatar }}"
+
+  - name: "Login with fake user"
+    flow:
+      - post:
+          url: "/auth/login"
+          json:
+            email: "{{ email }}"
+            password: "{{ password }}"
+          capture:
+            - json: "$.id"
+              as: "userId"
+            - header: "Set-Cookie"
+              as: "sessionCookie"
+
+  - name: "Logout fake user"
+    flow:
+      - get:
+          url: "/auth/logout"
+          headers:
+            Cookie: "Session={{ sessionCookie }}"

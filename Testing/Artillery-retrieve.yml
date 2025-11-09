@@ -1,0 +1,24 @@
+config:
+  target: "http://localhost:8080"
+  phases:
+    - duration: 60
+      arrivalRate: 10    # 10 requests per second
+  defaults:
+    headers:
+      Content-Type: "application/json"
+
+scenarios:
+  - name: "Retrieve User by ID"
+    flow:
+      - get:
+          url: "/users/retrieve"
+          qs:
+            id: "{{ userId }}"
+    variables:
+      # Define user IDs to randomly pick from
+      userId:
+        - "user1"
+        - "user2"
+        - "user3"
+        - "user4"
+        - "user5"
