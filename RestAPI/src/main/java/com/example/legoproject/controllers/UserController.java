@@ -1,7 +1,6 @@
 package com.example.legoproject.controllers;
 
 import com.example.legoproject.models.UserProfile;
-import com.example.legoproject.models.UserUpdateData;
 import com.example.legoproject.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -46,9 +45,8 @@ public class UserController {
     }
 
     @PutMapping("/update")
-    public UserProfile updateProfile(@RequestBody UserUpdateData user,@CookieValue(name = "Session") String session) {
+    public UserProfile updateProfile(@RequestBody Map<String,String> user,@CookieValue(name = "Session") String session) {
 
-        System.out.println("user "+user);
         UserProfile profile = userService.getUserBySession(session);
 
         if (profile == null)

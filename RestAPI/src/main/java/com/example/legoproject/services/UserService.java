@@ -477,11 +477,45 @@ public class UserService {
 
     }
 
-    public UserProfile updateUser(String userId,UserUpdateData updateData) {
+    public UserProfile updateUser(String userId,Map<String,String> updateData) {
 
         CosmosPatchOperations op = CosmosPatchOperations.create();
 
-        if (updateData.getUsername() != null) {
+        if (updateData.containsKey("username") && updateData.get("username") != null) {
+            op.replace("/username",updateData.get("username"));
+        }
+
+        if (updateData.containsKey("email") && updateData.get("email") != null) {
+
+            String desiredEmail = updateData.get("email");
+
+            if (verifyEmail(desiredEmail)) {
+
+                op.replace("/email", updateData.get("email"));
+            }
+        }
+
+        if (updateData.containsKey("password") && updateData.get("password") != null) {
+            op.replace("/password",updateData.get("password"));
+        }
+
+        if (updateData.containsKey("avatar")) {
+            String avatar = updateData.get("avatar");
+
+            if (avatar == null) {
+                op.replace("/avatar",null);
+            } else {
+
+                MediaData data = mediaService.getOwnedImage(avatar, userId);
+
+                if (data != null) {
+                    op.replace("/avatar", new MediaDataDTO(data.getId(), data.getFile()));
+                }
+            }
+        }
+
+
+       /* if (updateData.getUsername() != null) {
             op.replace("/username",updateData.getUsername());
         }
 
@@ -502,7 +536,7 @@ public class UserService {
             if (data != null) {
                 op.replace("/avatar", new MediaDataDTO(data.getId(), data.getFile()));
             }
-        }
+        }*/
 
         CosmosPatchItemRequestOptions options = new CosmosPatchItemRequestOptions();
         options.setContentResponseOnWriteEnabled(true);
