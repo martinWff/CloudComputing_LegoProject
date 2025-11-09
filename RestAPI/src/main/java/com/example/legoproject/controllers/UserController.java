@@ -1,5 +1,6 @@
 package com.example.legoproject.controllers;
 
+import com.example.legoproject.models.User;
 import com.example.legoproject.models.UserProfile;
 import com.example.legoproject.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,14 +46,14 @@ public class UserController {
     }
 
     @PutMapping("/update")
-    public UserProfile updateProfile(@RequestBody Map<String,String> user,@CookieValue(name = "Session") String session) {
+    public UserProfile updateProfile(@RequestBody Map<String,String> userData,@CookieValue(name = "Session") String session) {
 
         UserProfile profile = userService.getUserBySession(session);
 
         if (profile == null)
-            return  null;
+            return null;
 
-        return userService.updateUser(profile.getId(),user);
+        return userService.updateUser(profile.getId(),userData);
     }
 
     @DeleteMapping("/delete")

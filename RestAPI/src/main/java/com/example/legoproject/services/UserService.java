@@ -479,10 +479,13 @@ public class UserService {
 
     public UserProfile updateUser(String userId,Map<String,String> updateData) {
 
+        boolean isDirty = false;
+
         CosmosPatchOperations op = CosmosPatchOperations.create();
 
         if (updateData.containsKey("username") && updateData.get("username") != null) {
             op.replace("/username",updateData.get("username"));
+            isDirty = true;
         }
 
         if (updateData.containsKey("email") && updateData.get("email") != null) {
@@ -492,11 +495,15 @@ public class UserService {
             if (verifyEmail(desiredEmail)) {
 
                 op.replace("/email", updateData.get("email"));
+
+                isDirty = true;
             }
         }
 
         if (updateData.containsKey("password") && updateData.get("password") != null) {
-            op.replace("/password",updateData.get("password"));
+            op.replace("/password",hashPassword(updateData.get("password")));
+
+            isDirty = true;
         }
 
         if (updateData.containsKey("avatar")) {
@@ -504,42 +511,26 @@ public class UserService {
 
             if (avatar == null) {
                 op.replace("/avatar",null);
+
+                isDirty = true;
             } else {
 
                 MediaData data = mediaService.getOwnedImage(avatar, userId);
 
                 if (data != null) {
                     op.replace("/avatar", new MediaDataDTO(data.getId(), data.getFile()));
+
+                    isDirty = true;
                 }
             }
         }
 
-
-       /* if (updateData.getUsername() != null) {
-            op.replace("/username",updateData.getUsername());
-        }
-
-        if (updateData.getEmail() != null) {
-            op.replace("/email",updateData.getEmail());
-        }
-
-        if (updateData.getPassword() != null) {
-            op.replace("/password",hashPassword(updateData.getPassword()));
-        }
-
-        if (updateData.getAvatar() != null) {
-
-            String avatar = updateData.getAvatar();
-
-            MediaData data = mediaService.getOwnedImage(avatar,userId);
-
-            if (data != null) {
-                op.replace("/avatar", new MediaDataDTO(data.getId(), data.getFile()));
-            }
-        }*/
+        if (!isDirty)
+            return null;
 
         CosmosPatchItemRequestOptions options = new CosmosPatchItemRequestOptions();
         options.setContentResponseOnWriteEnabled(true);
+
 
         CosmosItemResponse<User> userResponse = container.patchItem(userId,new PartitionKey(userId),op,options,User.class);
 
