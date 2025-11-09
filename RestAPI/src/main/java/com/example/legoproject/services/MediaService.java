@@ -116,6 +116,21 @@ public class MediaService {
         return null;
     }
 
+    public MediaData getOwnedImage(String id,String userId) {
+
+        SqlQuerySpec s = new SqlQuerySpec("SELECT * FROM c where c.id = @id AND c.owner = @userId", Arrays.asList(new SqlParameter("@id",id), new SqlParameter("@userId",userId)));
+        CosmosPagedIterable<MediaData> m = mediaContainer.queryItems(s,new CosmosQueryRequestOptions(),MediaData.class);
+
+        if (m.iterator().hasNext()) {
+            MediaData mediaData = m.iterator().next();
+
+            return mediaData;
+        }
+
+
+        return null;
+    }
+
 
     public BlobClient getBlobClient(String id) {
 

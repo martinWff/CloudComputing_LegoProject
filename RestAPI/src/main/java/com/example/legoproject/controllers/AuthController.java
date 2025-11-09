@@ -1,6 +1,7 @@
 package com.example.legoproject.controllers;
 
 import com.azure.core.annotation.BodyParam;
+import com.azure.cosmos.implementation.HttpConstants;
 import com.example.legoproject.models.AuthData;
 import com.example.legoproject.models.User;
 import com.example.legoproject.models.UserProfile;
@@ -9,6 +10,7 @@ import com.example.legoproject.services.UserService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -32,13 +34,8 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<UserProfile> login(@RequestBody AuthData authData,@CookieValue(name = "Session", required = false) String session) {
 
-        if (session != null)
-        {
-            UserProfile p = userService.getUserBySession(session);
-
-            if (p != null)
-                return ResponseEntity.ok().body(p);
-        }
+        if (authData.getEmail() == null || authData.getPassword() == null)
+            return ResponseEntity.status(HttpConstants.StatusCodes.BADREQUEST).body(null);
 
 
         UserSessionData sessionData = userService.login(authData);
@@ -74,14 +71,24 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public UserProfile register(@RequestBody User userData) {
+    public ResponseEntity<UserProfile> register(@RequestBody User userData) {
 
-        String id = UUID.randomUUID().toString();
-        User user =new User(id,userData.getUsername(),userData.getEmail(),userService.hashPassword(userData.getPassword()), Instant.now(),userData.getAvatar(),false,1);
-        if (userService.createUser(user))
-            return new UserProfile(user.getId(),user.getUsername(),user.getDateOfCreation(),user.getPower());
-        else
+        if (userData.getEmail() == null || userData.getPassword() == null || userData.getUsername() == null)
+            return ResponseEntity.status(HttpConstants.StatusCodes.BADREQUEST).body(null);
+
+
+        UserSessionData usd = userService.register(userData.getUsername(),userData.getEmail(),userData.getPassword());
+
+        if (usd == null)
             return null;
+
+        ResponseCookie cookie = ResponseCookie.from("Session",usd.session)
+                .sameSite("Lax")
+                .path("/")
+                .maxAge((long)userService.getSessionExpiration())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.CREATED).header("Set-Cookie",cookie.toString()).body(usd.profile);
     }
 
 

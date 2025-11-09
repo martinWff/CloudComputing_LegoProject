@@ -71,7 +71,7 @@ public class MediaController {
         }
     }
 
-    @GetMapping("/image/{id}")
+    @GetMapping("/download/{id}")
     public ResponseEntity<InputStreamResource> download(@PathVariable String id) {
 
 

@@ -14,7 +14,7 @@ public class UserProfile {
     @JsonSerialize(using = TimestampSerializer.class)
     private Instant dateOfCreation;
 
-    private String avatar;
+    private MediaDataDTO avatar;
     private int power;
 
     public UserProfile() {
@@ -28,7 +28,7 @@ public class UserProfile {
         this.power = power;
     }
 
-    public UserProfile(String id, String username, Instant dateOfCreation, String avatar,int power) {
+    public UserProfile(String id, String username, Instant dateOfCreation, MediaDataDTO avatar,int power) {
         this.id = id;
         this.username = username;
         this.dateOfCreation = dateOfCreation;
@@ -67,11 +67,11 @@ public class UserProfile {
         this.dateOfCreation = dateOfCreation;
     }
 
-    public String getAvatar() {
+    public MediaDataDTO getAvatar() {
         return avatar;
     }
 
-    public void setAvatar(String avatar) {
+    public void setAvatar(MediaDataDTO avatar) {
         this.avatar = avatar;
     }
 
