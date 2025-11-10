@@ -200,20 +200,20 @@ public class LegoSetService {
 
     }
 
-    public Manufactured createManufactured(LegoSet set,String userId)
+    public ManufacturedData createManufactured(LegoSet set, String userId)
     {
-        Manufactured manufactured = new Manufactured(set,userId);
+        ManufacturedData manufactured = new ManufacturedData(set,userId);
 
         manufacturedContainer.createItem(manufactured,new PartitionKey(set.getId()),new CosmosItemRequestOptions());
 
         return manufactured;
     }
 
-    public Manufactured getManufactured(String manufacturedId) {
+    public ManufacturedData getManufacturedData(String manufacturedId) {
 
         SqlQuerySpec spec = new SqlQuerySpec("SELECT * FROM c WHERE c.id = @id", Arrays.asList(new SqlParameter("@id",manufacturedId)));
 
-        CosmosPagedIterable<Manufactured> iterable = manufacturedContainer.queryItems(spec,new CosmosQueryRequestOptions(),Manufactured.class);
+        CosmosPagedIterable<ManufacturedData> iterable = manufacturedContainer.queryItems(spec,new CosmosQueryRequestOptions(), ManufacturedData.class);
 
        if (iterable.iterator().hasNext()) {
            return iterable.iterator().next();
@@ -222,7 +222,18 @@ public class LegoSetService {
        return null;
     }
 
-    public Manufactured updateManufacturedOwnership(Manufactured manufactured, String userId) {
+    public Manufactured getManufactured(String manufacturedId) {
+
+        ManufacturedData m = getManufacturedData(manufacturedId);
+
+        UserProfile p = userService.getUser(m.getOwner());
+        LegoSet l = getLegoSet(m.getLegoSetId());
+
+
+        return new Manufactured(m.getId(),l,p,m.getCreatedAt());
+    }
+
+    public ManufacturedData updateManufacturedOwnership(ManufacturedData manufactured, String userId) {
 
         CosmosPatchItemRequestOptions opt = new CosmosPatchItemRequestOptions();
         opt.setContentResponseOnWriteEnabled(true);
@@ -232,7 +243,7 @@ public class LegoSetService {
 
 
 
-        CosmosItemResponse<Manufactured> manufactResponse = manufacturedContainer.patchItem(manufactured.getId(), new PartitionKey(manufactured.getLegoSetId()),op,opt,Manufactured.class);
+        CosmosItemResponse<ManufacturedData> manufactResponse = manufacturedContainer.patchItem(manufactured.getId(), new PartitionKey(manufactured.getLegoSetId()),op,opt, ManufacturedData.class);
 
         return manufactResponse.getItem();
     }
@@ -244,8 +255,6 @@ public class LegoSetService {
         try (Jedis jedis = jedisPool.getResource()) {
 
             String cachedAsStr = jedis.get("legoSet:"+legoSetId);
-
-            System.out.println(cachedAsStr);
 
             if (cachedAsStr != null) {
                 try {

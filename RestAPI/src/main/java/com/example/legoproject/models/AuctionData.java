@@ -1,7 +1,10 @@
 package com.example.legoproject.models;
 
+import com.example.legoproject.TimestampSerializer;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -16,20 +19,43 @@ public class AuctionData {
 
     private Instant createdAt;
 
-    @JsonFormat(shape = JsonFormat.Shape.NUMBER)
-    private Instant endsAt;
+    private int endsIn;
+
+    private boolean isClosed;
+
+    private BidInfo currentBid;
 
     public AuctionData() {
 
     }
 
-    public AuctionData(double startingBid,String auctioneer,String product,Instant endsAt) {
+    public AuctionData(double startingBid,String auctioneer,String product,int endsIn) {
         id = UUID.randomUUID().toString();
         this.startingBid = startingBid;
         this.auctioneer = auctioneer;
         this.product = product;
         this.createdAt = Instant.now();
-        this.endsAt = endsAt;
+        this.endsIn = endsIn;
+    }
+
+    public AuctionData(String id,double startingBid,String auctioneer,String product,int endsIn) {
+        this.id = id;
+        this.startingBid = startingBid;
+        this.auctioneer = auctioneer;
+        this.product = product;
+        this.createdAt = Instant.now();
+        this.endsIn = endsIn;
+    }
+
+    public AuctionData(String id,double startingBid,String auctioneer,String product,Instant createdAt,int endsIn,BidInfo b,boolean isClosed) {
+        this.id = id;
+        this.startingBid = startingBid;
+        this.auctioneer = auctioneer;
+        this.product = product;
+        this.createdAt = createdAt;
+        this.endsIn = endsIn;
+        this.currentBid = b;
+        this.isClosed = isClosed;
     }
 
     public String getId() {
@@ -72,11 +98,27 @@ public class AuctionData {
         this.createdAt = createdAt;
     }
 
-    public Instant getEndsAt() {
-        return endsAt;
+    public int getEndsIn() {
+        return endsIn;
     }
 
-    public void setEndsAt(Instant endsAt) {
-        this.endsAt = endsAt;
+    public void setEndsIn(int endsAt) {
+        this.endsIn = endsAt;
+    }
+
+    public boolean isClosed() {
+        return isClosed;
+    }
+
+    public void setClosed(boolean closed) {
+        isClosed = closed;
+    }
+
+    public BidInfo getCurrentBid() {
+        return currentBid;
+    }
+
+    public void setCurrentBid(BidInfo currentBid) {
+        this.currentBid = currentBid;
     }
 }
