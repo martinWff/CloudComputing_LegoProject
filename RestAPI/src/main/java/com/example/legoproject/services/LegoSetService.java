@@ -1,33 +1,28 @@
 package com.example.legoproject.services;
 
-import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.CosmosDatabase;
 import com.azure.cosmos.CosmosException;
-import com.azure.cosmos.models.CosmosQueryRequestOptions;
-import com.azure.cosmos.models.FeedResponse;
-import com.azure.cosmos.models.SqlParameter;
-import com.azure.cosmos.models.SqlQuerySpec;
+import com.azure.cosmos.models.*;
 import com.azure.cosmos.util.CosmosPagedIterable;
 import com.example.legoproject.models.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PostMapping;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.params.ZAddParams;
 
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 @Service
 public class LegoSetService {
 
     private final CosmosContainer container;
     private final CosmosContainer commentContainer;
+
+    private final CosmosContainer manufacturedContainer;
 
     private final UserService userService;
 
@@ -40,6 +35,7 @@ public class LegoSetService {
     public LegoSetService(CosmosDatabase db, UserService us, JedisPool pool) {
         this.container = db.getContainer("LegoSet");
         this.commentContainer = db.getContainer("Comments");
+        this.manufacturedContainer = db.getContainer("Manufactured");
         this.userService = us;
         this.jedisPool = pool;
     }
@@ -202,6 +198,88 @@ public class LegoSetService {
         }
 
 
+    }
+
+    public Manufactured createManufactured(LegoSet set,String userId)
+    {
+        Manufactured manufactured = new Manufactured(set,userId);
+
+        manufacturedContainer.createItem(manufactured,new PartitionKey(set.getId()),new CosmosItemRequestOptions());
+
+        return manufactured;
+    }
+
+    public Manufactured getManufactured(String manufacturedId) {
+
+        SqlQuerySpec spec = new SqlQuerySpec("SELECT * FROM c WHERE c.id = @id", Arrays.asList(new SqlParameter("@id",manufacturedId)));
+
+        CosmosPagedIterable<Manufactured> iterable = manufacturedContainer.queryItems(spec,new CosmosQueryRequestOptions(),Manufactured.class);
+
+       if (iterable.iterator().hasNext()) {
+           return iterable.iterator().next();
+       }
+
+       return null;
+    }
+
+    public Manufactured updateManufacturedOwnership(Manufactured manufactured, String userId) {
+
+        CosmosPatchItemRequestOptions opt = new CosmosPatchItemRequestOptions();
+        opt.setContentResponseOnWriteEnabled(true);
+
+        CosmosPatchOperations op = CosmosPatchOperations.create();
+        op.replace("/owner",userId);
+
+
+
+        CosmosItemResponse<Manufactured> manufactResponse = manufacturedContainer.patchItem(manufactured.getId(), new PartitionKey(manufactured.getLegoSetId()),op,opt,Manufactured.class);
+
+        return manufactResponse.getItem();
+    }
+
+    public LegoSet getLegoSet(String legoSetId) {
+
+
+        LegoSet cached = null;
+        try (Jedis jedis = jedisPool.getResource()) {
+
+            String cachedAsStr = jedis.get("legoSet:"+legoSetId);
+
+            System.out.println(cachedAsStr);
+
+            if (cachedAsStr != null) {
+                try {
+                    cached = oMapper.readValue(cachedAsStr, LegoSet.class);
+                } catch (Exception e) {
+                    System.err.println("read err: " + e);
+                }
+            }
+        }
+
+
+        if (cached != null)
+            return cached;
+
+        SqlQuerySpec spec = new SqlQuerySpec("SELECT * FROM c WHERE c.id = @id", Arrays.asList(new SqlParameter("@id",legoSetId)));
+
+        CosmosPagedIterable<LegoSet> iterable = container.queryItems(spec,new CosmosQueryRequestOptions(),LegoSet.class);
+
+        if (iterable.iterator().hasNext()) {
+
+            cached = iterable.iterator().next();
+
+            try (Jedis jedis = jedisPool.getResource()) {
+
+                try {
+                    jedis.setex("legoSet:"+legoSetId,7200, oMapper.writeValueAsString(cached));
+                } catch (Exception e) {
+                    System.err.println("write err: "+e);
+                }
+            }
+
+        }
+
+        return cached;
     }
 
 }

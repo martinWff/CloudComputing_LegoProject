@@ -41,7 +41,7 @@ public class AuthController {
         UserSessionData sessionData = userService.login(authData);
 
         if (sessionData == null)
-            return null;
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
 
         ResponseCookie cookie = ResponseCookie.from("Session",sessionData.session)
                 .sameSite("Lax")
