@@ -23,25 +23,21 @@ public class UserController {
 
     private UserService userService;
 
-
     @Autowired
     public UserController(UserService userService) {
       this.userService = userService;
     }
 
-
     @GetMapping("/retrieve")
     public UserProfile getUser(@RequestParam String id) {
 
         UserProfile user = userService.getUser(id);
-
         return user;
     }
 
     @GetMapping("/list")
     public Map<String,Object> listUsers(@RequestParam(required = false) String token) {
         Map<String,Object> profiles = userService.getProfilesList(token,5);
-
         return profiles;
     }
 
