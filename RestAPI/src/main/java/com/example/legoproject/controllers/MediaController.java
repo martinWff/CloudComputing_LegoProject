@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/media")
@@ -37,37 +39,42 @@ public class MediaController {
     }
 
     @PostMapping("/upload")
-    public ResponseEntity<String> upload(@RequestParam("file")MultipartFile multipartFile, @CookieValue(name = "Session", required = false) String session) {
+    public ResponseEntity<?> upload(@RequestParam("file")MultipartFile multipartFile, @CookieValue(name = "Session", required = false) String session) {
 
-        System.out.println("USER!");
+        Map<String,Object> map = new HashMap<>();
 
         UserProfile user = userService.getUserBySession(session);
 
+
+
         if (user == null)
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(("User must be authenticated"));
+        {
+            map.put("Error","Authentication Required");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(map);
+
+        }
 
 
         //limits to 131kb
         if (multipartFile.getSize() > 131072)
         {
-            return ResponseEntity.status(HttpStatus.BANDWIDTH_LIMIT_EXCEEDED).body("File is too large, max allowed is 128 KB.");
+            map.put("Error","File is too large, max allowed is 128 KB.");
+            return ResponseEntity.status(HttpStatus.BANDWIDTH_LIMIT_EXCEEDED).body(map);
         }
 
         System.out.println(multipartFile.getOriginalFilename());
 
         try {
 
-             boolean status = mediaService.save(multipartFile,user.getId());
+             MediaData mediaData = mediaService.save(multipartFile,user.getId());
 
-             if (status) {
-                 return ResponseEntity.status(HttpStatus.CREATED).body("File uploaded sucessfully");
-             } else {
-                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error uploading image");
-             }
+
+             return ResponseEntity.status(HttpStatus.CREATED).body(mediaData);
 
         } catch (IOException e) {
 
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error uploading image");
+            map.put("Error","Error uploading image");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(map);
         }
     }
 

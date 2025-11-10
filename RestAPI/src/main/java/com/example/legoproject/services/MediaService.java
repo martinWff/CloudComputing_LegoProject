@@ -52,7 +52,7 @@ public class MediaService {
     }
 
 
-    public boolean save(MultipartFile multipartFile,String userId) throws IOException {
+    public MediaData save(MultipartFile multipartFile,String userId) throws IOException {
 
         //convert body to bytes (in a real app, isolate file data properly)
 
@@ -68,11 +68,13 @@ public class MediaService {
 
         BlobClient blobClient = containerClient.getBlobClient(fileHash);
 
-        mediaContainer.createItem(new MediaData(multipartFile.getOriginalFilename(),fileHash,"image",userId));
+        MediaData m = new MediaData(multipartFile.getOriginalFilename(),fileHash,"image",userId);
+
+        mediaContainer.createItem(m);
 
         if (blobClient.exists()) {
 
-            return false;
+            return m;
         }
 
         //upload file (overwrite if exists)
@@ -92,11 +94,11 @@ public class MediaService {
 
             //gets blob URL
       //  String blobUrl = blobClient.getBlobUrl();
-        return true;
+        return m;
 
     } catch (Exception e) {
         e.printStackTrace();
-        return false;
+        return null;
     }
 
     }

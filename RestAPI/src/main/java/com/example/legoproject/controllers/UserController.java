@@ -46,14 +46,16 @@ public class UserController {
     }
 
     @PutMapping("/update")
-    public UserProfile updateProfile(@RequestBody Map<String,String> userData,@CookieValue(name = "Session") String session) {
+    public ResponseEntity<UserProfile> updateProfile(@RequestBody Map<String,String> userData,@CookieValue(name = "Session") String session) {
 
         UserProfile profile = userService.getUserBySession(session);
 
         if (profile == null)
-            return null;
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
 
-        return userService.updateUser(profile.getId(),userData);
+        profile = userService.updateUser(profile.getId(),userData);
+
+        return ResponseEntity.ok().body(profile);
     }
 
     @DeleteMapping("/delete")

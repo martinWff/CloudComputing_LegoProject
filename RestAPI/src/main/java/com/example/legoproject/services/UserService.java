@@ -509,6 +509,7 @@ public class UserService {
             } else {
 
                 MediaData data = mediaService.getOwnedImage(avatar, userId);
+                System.out.println("media load "+data);
 
                 if (data != null) {
                     op.replace("/avatar", new MediaDataDTO(data.getId(), data.getFile()));
