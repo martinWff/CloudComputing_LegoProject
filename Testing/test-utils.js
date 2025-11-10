@@ -1,34 +1,20 @@
-'use strict';
-const { faker } = require('@faker-js/faker');
+const crypto = require('crypto');
+
+function genNewUser(userContext, events, done) {
+  // Generate a random unique username and email
+  const uniqueId = crypto.randomBytes(4).toString('hex'); // 8-char hex
+  const uName = `user_${uniqueId}`;
+  const uEmail = `user_${uniqueId}@example.com`;
+  const uPwd = `Pwd_${uniqueId}#`;
+
+  // Save them to the virtual user context
+  userContext.vars.uName = uName;
+  userContext.vars.uEmail = uEmail;
+  userContext.vars.uPwd = uPwd;
+
+  return done();
+}
 
 module.exports = {
-  // Generate a new user
-  genNewUser: function (context, events, done) {
-    context.vars.uName = faker.internet.userName().toLowerCase();
-    context.vars.uEmail = faker.internet.email();
-    context.vars.uPwd = faker.internet.password();
-    // Generate a temporary UUID for Artillery to use before backend returns real ID
-    context.vars.uId = faker.datatype.uuid();
-    return done();
-  },
-
-  // Capture the response from /register and store the real user ID
-  genNewUserReply: function (req, res, context, events, done) {
-    try {
-      const body = typeof res.body === 'string' ? JSON.parse(res.body) : res.body;
-      if (body && body.id) {
-        context.vars.uId = body.id; // overwrite temp ID with real backend ID
-      }
-    } catch (err) {
-      console.error('Failed to parse /register response:', err);
-    }
-    return done();
-  },
-
-  // Optional: capture image ID from /media upload
-  uploadImageBody: function (req, context, events, done) {
-    // This is an example: if you need to send an image, you can generate placeholder
-    req.body = faker.image.imageUrl(200, 200, 'lego', true);
-    return done();
-  }
+  genNewUser
 };
