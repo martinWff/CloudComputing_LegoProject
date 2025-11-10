@@ -1,4 +1,4 @@
-// faker-data.js
+
 import { faker } from '@faker-js/faker';
 
 export function generateUser(context, events, done) {
@@ -19,8 +19,6 @@ export function generateUserId(context, events, done) {
   }
   return done();
 }
-
-// 👇 Add these to silence the warnings
 export function metricsByEndpoint_beforeRequest(requestParams, context, ee, next) {
   return next();
 }
