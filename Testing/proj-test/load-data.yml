@@ -1,5 +1,5 @@
 config:
-  target: 'https://cc25appnorwayeast4204.azurewebsites.net/rest'
+  target: 'http://localhost:8080'
   plugins:
     metrics-by-endpoint:
       useOnlyRequestNames: true

@@ -1,0 +1,47 @@
+config:
+  target: 'http://localhost:8080'
+  phases:
+    - duration: 60
+      arrivalRate: 5
+  processor: "./test-utils.js"
+
+scenarios:
+  - name: "Auth endpoints"
+    flow:
+      - function: "genNewUser"
+
+      # Register
+      - post:
+          name: "Register user"
+          url: "/auth/register"
+          headers:
+            Content-Type: application/json
+          json:
+            username: "{{ uName }}"
+            email: "{{ uId }}@example.com"
+            password: "{{ uPwd }}"
+          capture:
+            headers:
+              Set-Cookie: "Set-Cookie"
+              as: "sessionCookie"
+
+      # Login
+      - post:
+          name: "Login user"
+          url: "/auth/login"
+          headers:
+            Content-Type: application/json
+          json:
+            email: "{{ uId }}@example.com"
+            password: "{{ uPwd }}"
+          capture:
+            headers:
+              Set-Cookie: "Set-Cookie"
+              as: "sessionCookie"
+
+      # Logout
+      - get:
+          name: "Logout user"
+          url: "/auth/logout"
+          headers:
+            Cookie: "{{ sessionCookie }}"

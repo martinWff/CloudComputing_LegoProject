@@ -1,40 +1,84 @@
 config:
-  target: "http://localhost:8080"
+  target: "http://localhost:8080"  # Change to your API base URL
   phases:
     - duration: 60
-      arrivalRate: 5   # 5 virtual users per second
-  processor: "./processors.cjs"
+      arrivalRate: 2   # Start with 2 users/sec, can increase later
   defaults:
     headers:
       Content-Type: "application/json"
 
 scenarios:
-  - name: "Register fake users"
+  - name: "User Authentication and CRUD Tests"
     flow:
+      # 1. Register a new user
       - post:
           url: "/auth/register"
           json:
-            username: "{{ username }}"
-            email: "{{ email }}"
-            password: "{{ password }}"
-            avatar: "{{ avatar }}"
-
-  - name: "Login with fake user"
-    flow:
-      - post:
-          url: "/auth/login"
-          json:
-            email: "{{ email }}"
-            password: "{{ password }}"
+            username: "testuser_{{ $randomString(5) }}"
+            email: "testuser_{{ $randomString(5) }}@example.com"
+            password: "TestPass123"
           capture:
             - json: "$.id"
               as: "userId"
-            - header: "Set-Cookie"
+            - json: "$.email"
+              as: "userEmail"
+            - header: "set-cookie"
+              as: "rawSessionCookie"
+              expr: "Session=([^;]+)"
+      
+      # 2. Login with the same user (optional, just to ensure session works)
+      - post:
+          url: "/auth/login"
+          json:
+            email: "{{ userEmail }}"
+            password: "TestPass123"
+          capture:
+            - header: "set-cookie"
               as: "sessionCookie"
+              expr: "Session=([^;]+)"
 
-  - name: "Logout fake user"
-    flow:
+      # 3. Get user profile using session cookie
+      - get:
+          url: "/users/profile"
+          headers:
+            Cookie: "Session={{ sessionCookie }}"
+
+      # 4. List users
+      - get:
+          url: "/users/list"
+
+      # 5. Retrieve user by id
+      - get:
+          url: "/users/retrieve"
+          qs:
+            id: "{{ userId }}"
+
+      # 6. Update user profile
+      - put:
+          url: "/users/update"
+          headers:
+            Cookie: "Session={{ sessionCookie }}"
+          json:
+            username: "UpdatedUser_{{ $randomString(3) }}"
+            bio: "This is an updated bio"
+
+      # 7. Upload a media file
+      - post:
+          url: "/media/upload"
+          headers:
+            Cookie: "Session={{ sessionCookie }}"
+          multipart:
+            - name: "file"
+              path: "./sample.png"   # Make sure this file exists
+
+      # 8. Logout
       - get:
           url: "/auth/logout"
+          headers:
+            Cookie: "Session={{ sessionCookie }}"
+
+      # 9. Delete user
+      - delete:
+          url: "/users/delete"
           headers:
             Cookie: "Session={{ sessionCookie }}"
