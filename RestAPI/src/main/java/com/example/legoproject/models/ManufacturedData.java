@@ -4,27 +4,28 @@ import com.example.legoproject.TimestampSerializer;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import java.time.Instant;
+import java.util.UUID;
 
-public class Manufactured {
+public class ManufacturedData {
     private String id;
 
-    private LegoSet legoSet;
-    private UserProfile owner;
+    private String legoSetId;
+    private String owner;
 
     @JsonSerialize(using = TimestampSerializer.class)
     private Instant createdAt;
 
-    public Manufactured() {
+
+    public ManufacturedData() {
 
     }
 
-    public Manufactured(String id,LegoSet legoSet,UserProfile profile,Instant createdAt) {
-        this.id = id;
-        this.legoSet = legoSet;
-        this.owner = profile;
-        this.createdAt = createdAt;
+    public ManufacturedData(LegoSet legoSet, String userId) {
+        this.id = UUID.randomUUID().toString();
+        this.legoSetId = legoSet.getId();
+        this.owner = userId;
+        this.createdAt = Instant.now();
     }
-
 
     public String getId() {
         return id;
@@ -34,19 +35,19 @@ public class Manufactured {
         this.id = id;
     }
 
-    public LegoSet getLegoSet() {
-        return legoSet;
+    public String getLegoSetId() {
+        return legoSetId;
     }
 
-    public void setLegoSet(LegoSet legoSet) {
-        this.legoSet = legoSet;
+    public void setLegoSetId(String legoSetId) {
+        this.legoSetId = legoSetId;
     }
 
-    public UserProfile getOwner() {
+    public String getOwner() {
         return owner;
     }
 
-    public void setOwner(UserProfile owner) {
+    public void setOwner(String owner) {
         this.owner = owner;
     }
 

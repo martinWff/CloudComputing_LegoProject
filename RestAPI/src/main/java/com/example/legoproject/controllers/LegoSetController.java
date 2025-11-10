@@ -66,7 +66,7 @@ public class LegoSetController {
 
 
     @PostMapping("/manufactured/create")
-    public ResponseEntity<Manufactured> addManufacture(@CookieValue(name = "Session") String session,@RequestBody Map<String,String> map) {
+    public ResponseEntity<ManufacturedData> addManufacture(@CookieValue(name = "Session") String session, @RequestBody Map<String,String> map) {
 
         UserProfile profile = userService.getUserBySession(session);
         if (profile ==null || profile.getPower() < 3)
@@ -95,7 +95,7 @@ public class LegoSetController {
     }
 
     @PutMapping("/manufactured/assign/{id}")
-    public ResponseEntity<Manufactured> addManuFacture(@CookieValue(name = "Session") String session,@PathVariable String id,@RequestBody Map<String,String> map) {
+    public ResponseEntity<ManufacturedData> addManuFacture(@CookieValue(name = "Session") String session, @PathVariable String id, @RequestBody Map<String,String> map) {
 
         UserProfile profile = userService.getUserBySession(session);
         if (profile ==null || profile.getPower() < 3)
@@ -106,13 +106,12 @@ public class LegoSetController {
             return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(null);
 
 
-        Manufactured man = legoSetService.getManufactured(id);
+        ManufacturedData man = legoSetService.getManufacturedData(id);
+
 
         if (man == null)
             return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(null);
 
-        if (man == null)
-            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(null);
 
         String ownerId = null;
 

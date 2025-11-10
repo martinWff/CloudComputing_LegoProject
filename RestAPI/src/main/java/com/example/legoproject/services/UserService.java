@@ -37,7 +37,7 @@ public class UserService {
 
     private SecureRandom secureRandom;
 
-    private int cookieExpiration = 3600;
+    private int cookieExpiration = 2629744;
     private int redisExpiration = 3600;
 
     @Autowired
