@@ -1,15 +1,28 @@
 package com.example.legoproject.controllers;
 
-import com.example.legoproject.models.*;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.legoproject.models.Auction;
+import com.example.legoproject.models.AuctionData;
+import com.example.legoproject.models.BidData;
+import com.example.legoproject.models.BidInfo;
+import com.example.legoproject.models.Manufactured;
+import com.example.legoproject.models.ManufacturedData;
+import com.example.legoproject.models.UserProfile;
 import com.example.legoproject.services.AuctionService;
 import com.example.legoproject.services.LegoSetService;
 import com.example.legoproject.services.UserService;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/auction")
@@ -141,8 +154,6 @@ public class AuctionController {
         Manufactured md = legoSetService.getManufactured(auction.getProduct());
 
         UserProfile profile = userService.getUser(id);
-
-
 
         Auction a = new Auction(auction.getId(),auction.getStartingBid(),profile,md,auction.getCreatedAt(),auction.getEndsIn());
 

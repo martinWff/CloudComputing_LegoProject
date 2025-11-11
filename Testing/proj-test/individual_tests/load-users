@@ -1,0 +1,69 @@
+config:
+  target: 'http://localhost:8080'
+  phases:
+    - duration: 60
+      arrivalRate: 3
+  processor: "./test-utils.js"
+
+scenarios:
+  - name: "User endpoints"
+    flow:
+      - function: "genNewUser"
+
+      # Register + login to get cookie
+      - post:
+          name: "Register user"
+          url: "/auth/register"
+          headers:
+            Content-Type: application/json
+          json:
+            username: "{{ uName }}"
+            email: "{{ uId }}@example.com"
+            password: "{{ uPwd }}"
+          capture:
+            headers:
+              Set-Cookie: "Set-Cookie"
+              as: "sessionCookie"
+
+      - post:
+          name: "Login user"
+          url: "/auth/login"
+          headers:
+            Content-Type: application/json
+          json:
+            email: "{{ uId }}@example.com"
+            password: "{{ uPwd }}"
+          capture:
+            headers:
+              Set-Cookie: "Set-Cookie"
+              as: "sessionCookie"
+
+      # Get profile
+      - get:
+          name: "Get user profile"
+          url: "/users/profile"
+          headers:
+            Cookie: "{{ sessionCookie }}"
+
+      # Update profile
+      - put:
+          name: "Update profile"
+          url: "/users/update"
+          headers:
+            Content-Type: application/json
+            Cookie: "{{ sessionCookie }}"
+          json:
+            bio: "Load test bio"
+            country: "Norway"
+
+      # List users
+      - get:
+          name: "List users"
+          url: "/users/list"
+
+      # Delete user
+      - delete:
+          name: "Delete user"
+          url: "/users/delete"
+          headers:
+            Cookie: "{{ sessionCookie }}"

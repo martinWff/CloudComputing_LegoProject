@@ -13,9 +13,9 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<functionAppName>cc25funnorwayeast4204</functionAppName>
-		<functionAppRegion>norwayeast</functionAppRegion>
-		<functionResourceGroup>cc25-rg-norwayeast-4204</functionResourceGroup>
+		<functionAppName>ProjetoLegoaAzFunction</functionAppName>
+		<functionAppRegion>francecentral</functionAppRegion>
+		<functionResourceGroup>Project</functionResourceGroup>
 	</properties>
 
 	<dependencies>

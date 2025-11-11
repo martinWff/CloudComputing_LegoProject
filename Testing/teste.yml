@@ -1,0 +1,118 @@
+config:
+  target: "http://localhost:8080"
+  phases:
+    - duration: 60
+      arrivalRate: 2
+  defaults:
+    headers:
+      Content-Type: "application/json"
+
+scenarios:
+  - name: Full User, Auction, Media, LegoSet, and Comment Flow
+    flow:
+      - post:
+          url: "/auth/register"
+          json:
+            username: "testuser_{{ $randomInt }}"
+            email: "testuser_{{ $randomInt }}@example.com"
+            password: "Password123!"
+          capture:
+            - json: "$.session"
+              as: "sessionToken"
+              failOnMissing: true
+            - json: "$.profile.id"
+              as: "userId"
+              failOnMissing: true
+      - post:
+          url: "/auth/login"
+          json:
+            email: "testuser_{{ $randomInt }}@example.com"
+            password: "Password123!"
+          capture:
+            - json: "$.session"
+              as: "loginToken"
+              failOnMissing: true
+            - json: "$.profile.id"
+              as: "loginUserId"
+              failOnMissing: true
+      - get:
+          url: "/users/profile"
+          headers:
+            Cookie: "Session={{ sessionToken }}"
+      - put:
+          url: "/users/update"
+          headers:
+            Cookie: "Session={{ sessionToken }}"
+          json:
+            username: "updateduser_{{ $randomInt }}"
+      - get:
+          url: "/users/retrieve"
+          headers:
+            Cookie: "Session={{ sessionToken }}"
+          qs:
+            id: "{{ userId }}"
+      - post:
+          url: "/legosets"
+          headers:
+            Cookie: "Session={{ sessionToken }}"
+          json:
+            name: "Test LegoSet {{ $randomInt }}"
+            theme: "Test Theme"
+          capture:
+            - json: "$.id"
+              as: "legoSetId"
+              failOnMissing: true
+      - get:
+          url: "/legosets/{{ legoSetId }}"
+          headers:
+            Cookie: "Session={{ sessionToken }}"
+      - post:
+          url: "/comments"
+          headers:
+            Cookie: "Session={{ sessionToken }}"
+          json:
+            legoSetId: "{{ legoSetId }}"
+            userId: "{{ userId }}"
+            content: "This is a test comment {{ $randomInt }}"
+          capture:
+            - json: "$.id"
+              as: "commentId"
+              failOnMissing: true
+      - get:
+          url: "/comments/{{ commentId }}"
+          headers:
+            Cookie: "Session={{ sessionToken }}"
+      - post:
+          url: "/auction/create"
+          headers:
+            Cookie: "Session={{ sessionToken }}"
+          json:
+            product: "{{ legoSetId }}"
+            endsIn: 30
+            startingBid: 50.0
+          capture:
+            - json: "$.id"
+              as: "auctionId"
+              failOnMissing: true
+      - post:
+          url: "/auction/bid/{{ auctionId }}"
+          headers:
+            Cookie: "Session={{ sessionToken }}"
+          json:
+            value: 60.0
+      - post:
+          url: "/media/upload"
+          headers:
+            Cookie: "Session={{ sessionToken }}"
+          multipart:
+            file:
+              path: "./test-image.png"
+              contentType: "image/png"
+      - delete:
+          url: "/users/delete"
+          headers:
+            Cookie: "Session={{ sessionToken }}"
+      - get:
+          url: "/auth/logout"
+          headers:
+            Cookie: "Session={{ sessionToken }}"
